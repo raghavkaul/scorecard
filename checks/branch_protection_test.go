@@ -133,7 +133,7 @@ func TestReleaseAndDevBranchProtected(t *testing.T) {
 			expected: scut.TestReturn{
 				Error:         nil,
 				Score:         2,
-				NumberOfWarn:  5,
+				NumberOfWarn:  6,
 				NumberOfInfo:  2,
 				NumberOfDebug: 0,
 			},
@@ -171,8 +171,8 @@ func TestReleaseAndDevBranchProtected(t *testing.T) {
 			expected: scut.TestReturn{
 				Error:         nil,
 				Score:         2,
-				NumberOfWarn:  6,
-				NumberOfInfo:  8,
+				NumberOfWarn:  7,
+				NumberOfInfo:  9,
 				NumberOfDebug: 0,
 			},
 			defaultBranch: main,
@@ -226,7 +226,7 @@ func TestReleaseAndDevBranchProtected(t *testing.T) {
 				Error:         nil,
 				Score:         8,
 				NumberOfWarn:  2,
-				NumberOfInfo:  12,
+				NumberOfInfo:  14,
 				NumberOfDebug: 0,
 			},
 			defaultBranch: main,
@@ -279,7 +279,7 @@ func TestReleaseAndDevBranchProtected(t *testing.T) {
 			expected: scut.TestReturn{
 				Error:         nil,
 				Score:         2,
-				NumberOfWarn:  5,
+				NumberOfWarn:  6,
 				NumberOfInfo:  2,
 				NumberOfDebug: 0,
 			},
