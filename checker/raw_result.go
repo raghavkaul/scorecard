@@ -125,9 +125,20 @@ type CodeReviewData struct {
 	DefaultBranchCommits []clients.Commit
 }
 
+// SmartCodeReviewData contains the raw results
+// for the Smart-Code-Review check.
+type SmartCodeReviewData struct {
+	DefaultBranchPulls []clients.PullRequest
+}
+
+type RepoContributor struct {
+	User     clients.User
+	IsWriter bool
+}
+
 // ContributorsData represents contributor information.
 type ContributorsData struct {
-	Users []clients.User
+	Contributors []RepoContributor
 }
 
 // VulnerabilitiesData contains the raw results
