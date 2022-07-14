@@ -15,6 +15,8 @@
 package evaluation
 
 import (
+        "fmt"
+
 	"github.com/ossf/scorecard/v4/checker"
 	"github.com/ossf/scorecard/v4/clients"
 )
@@ -22,84 +24,147 @@ import (
 // Review levels. Allows us to grant 'partial credit' for Code Review
 const (
 	NoReview             int = 0 // Changes were not reviewed before merging
-	SomeReview               = 0 // Changes were reviewed
-	Approval                 = 1 // Some portion of the revisions in this set of changes were approved by someone
-	SupercedingApproval      = 2 // The final revision in this set of changes was approved by someone
-	ApprovedByMaintainer     = 3 // The final revision in this set of changes was approved by a contributor with write access
+	UnresolvedDiscussion     = 0 // Changes were reviewed, but not approved
+	Approval                 = 1 // Some revisions in this set of changes were approved by someone
+	ApprovalByMaintainer     = 2 // The approver has write access, but there may be unreviewed commits
+        ExternalPlatformApproval = 2 // Commit was reviewed & approved outside of GitHub
 )
 
-func CodeReview2(name string, dl checker.DetailLogger,
+func SmartCodeReview(name string, dl checker.DetailLogger,
 	d *checker.SmartCodeReviewData, c *checker.ContributorsData,
 ) checker.CheckResult {
-	// Look at the last w changesets
-	nMerges := 0
-	windowSz := 10
-	pr := d.DefaultBranchPulls[0]
+        // TODO: Handle commits that aren't part of a changeset
+        // Maybe use the %age of commits that don't have a corresponding merge as 'Unreviewed' ?
+        // And use that to weight the responses?
+        // Maybe treat each commit pushed directly as a 'changeset', and each PR + all the commits contained in it as a changeset (i.e. autosquash everything). 
 
-	totalReviewed := 0
+	// Look at the last w changesets
+	totalReviewed := map[string]int{
+		reviewPlatformGitHub:      0,
+		reviewPlatformProw:        0,
+		reviewPlatformGerrit:      0,
+		reviewPlatformPhabricator: 0,
+		reviewPlatformPiper:       0,
+	}
 
 	for i := range d.DefaultBranchPulls {
 		pull := d.DefaultBranchPulls[i]
-
-		// If a GitHub PR doesn't squash commits, all commits included
-		// will point to the same PR (i.e. 'Merge Request'). For Code Review,
-		// we consider the reviews on the last commit in a PR to 'supercede'
-		// other reviews
-		// TODO: Handle if the last commit wasn't reviewed
-		isSupercedingReview := commit.AssociatedMergeRequest.Number == mr.Number
-
-		// We want to evaluate whether all the commits associated with a set
-		// of changes were reviewed, not checking them indiivdually
-		// TODO: Do we need nMerges or can we just use i?
-		if isSupercedingReview {
-			nMerges++
+	
+                
+                if isBot(pull.Author.Login) {
+		    dl.Debug(&checker.LogMessage{
+			Text: fmt.Sprintf("skip change set %s from bot account: %s", pull.HeadSHA, pull.Author.Login),
+                    })
 		}
 
-		// Check if the PR was 'approved' by looking at the newest review. This
-		// helps address situations where changes were requested and subsequently
-		// made by the author, and that PR conversations are 'resolved' by an
-		// approving review
-		lastReviewState := ""
-		for _, r := range mr.Reviews {
-			if ReviewWasByMaintainer(&r, c) {
-				if r.State == "APPROVED" || r.State == "REQUEST_CHANGES" {
-					lastReviewState = r.State
-				}
+		rs := getReviewScore(&pull, c, dl)
+
+		if rs == "" {
+			dl.Warn(&checker.LogMessage{
+				Text: fmt.Sprintf("no reviews found for changeset at revision: %s", pull.HeadSHA),
+			})
+			continue
+		}
+
+		totalReviewed[rs]++
+	}
+
+	if totalReviewed[reviewPlatformGitHub] == 0 &&
+		totalReviewed[reviewPlatformGerrit] == 0 &&
+		totalReviewed[reviewPlatformProw] == 0 &&
+		totalReviewed[reviewPlatformPhabricator] == 0 && totalReviewed[reviewPlatformPiper] == 0 {
+		return checker.CreateMinScoreResult(name, "no reviews found")
+	}
+
+	totalPulls := len(d.DefaultBranchPulls)
+	// Consider a single review system.
+	nbReviews, reviewSystem := computeReviews(totalReviewed)
+	if nbReviews == totalPulls {
+		return checker.CreateMaxScoreResult(name,
+			fmt.Sprintf("all last %v changesets are reviewed through %s", totalPulls, reviewSystem))
+	}
+
+	reason := fmt.Sprintf("%s code reviews found for %v changesets out of the last %v", reviewSystem, nbReviews, totalPulls)
+	return checker.CreateProportionalScoreResult(name, reason, nbReviews, totalPulls)
+}
+
+
+
+func getReviewScore(pr *clients.PullRequest, c *checker.ContributorsData, dl checker.DetailLogger) int {
+	return reviewScoreForGitHub(pr, c, dl)
+	// case reviewScoreForProw(pr, dl):
+	// 	return reviewPlatformProw
+	// case reviewScoreForGerrit(pr, dl):
+	// 	return reviewPlatformGerrit
+	// case reviewScoreForPhabricator(pr, dl):
+	// 	return reviewPlatformPhabricator
+	// case reviewScoreForPiper(pr, dl):
+	// 	return reviewPlatformPiper
+}
+
+ 
+func reviewScoreForProw(c *clients.Commit, dl checker.DetailLogger) int {
+
+	if !c.AssociatedMergeRequest.MergedAt.IsZero() {
+		for _, l := range c.AssociatedMergeRequest.Labels {
+			if l.Name == "lgtm" || l.Name == "approved" {
+				dl.Debug(&checker.LogMessage{
+					Text: fmt.Sprintf("commit %s review was through %s #%d approved merge request",
+						c.SHA, reviewPlatformProw, c.AssociatedMergeRequest.Number),
+				})
+				return true
 			}
 		}
-
-		// If the last review before a PR is merged requested changes, the maintainer
-		// may have ignored those reviews to merge
-		// TODO: Handle the else case
-		if lastReviewState == "APPROVED" {
-			totalReviewed++
-		}
-
-		if isSupercedingReview {
-		} else {
-		}
-
-		if nMerges >= windowSz {
-			break
-		}
-
-		mr = commit.AssociatedMergeRequest
 	}
-
-	return checker.CreateProportionalScoreResult(name, reason, nbReviews, totalCommits)
-}
-
-// Ensure that a pull request was reviewed by a maintainer to that repo
-// In this case, we define 'maintainer' loosely to mean 'this individual
-// has write access'.
-// TODO: Make reviews by more recognized contributors worth more
-func ReviewWasByMaintainer(r *clients.Review, c *checker.ContributorsData) bool {
-	for _, contributor := range c.Contributors {
-		if contributor.User.Login == r.Author.Login {
-			return contributor.IsWriter
-		}
-
-	}
-
 	return false
 }
+// 
+// func reviewScoreForGerrit(c *clients.PullRequest, dl checker.DetailLogger) int {
+// 	if isBot(c.Committer.Login) {
+// 		dl.Debug(&checker.LogMessage{
+// 			Text: fmt.Sprintf("skip commit %s from bot account: %s", c.SHA, c.Committer.Login),
+// 		})
+// 		return true
+// 	}
+// 
+// 	m := c.Message
+// 	if strings.Contains(m, "\nReviewed-on: ") &&
+// 		strings.Contains(m, "\nReviewed-by: ") {
+// 		dl.Debug(&checker.LogMessage{
+// 			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformGerrit),
+// 		})
+// 		return true
+// 	}
+// 	return false
+// }
+// 
+// func reviewScoreForPhabricator(c *clients.PullRequest, dl checker.DetailLogger) int {
+// 	if isBot(c.Committer.Login) {
+// 		dl.Debug(&checker.LogMessage{
+// 			Text: fmt.Sprintf("skip commit %s from bot account: %s", c.SHA, c.Committer.Login),
+// 		})
+// 		return true
+// 	}
+// 
+// 	m := c.Message
+// 	if strings.Contains(m, "\nDifferential Revision: ") &&
+// 		strings.Contains(m, "\nReviewed By: ") {
+// 		dl.Debug(&checker.LogMessage{
+// 			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformPhabricator),
+// 		})
+// 		return true
+// 	}
+// 	return false
+// }
+// 
+// func reviewScoreForPiper(c *clients.PullRequest, dl checker.DetailLogger) int {
+// 	m := c.Message
+// 	if strings.Contains(m, "\nPiperOrigin-RevId: ") {
+// 		dl.Debug(&checker.LogMessage{
+// 			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformPiper),
+// 		})
+// 		return true
+// 	}
+// 	return false
+// }
+// 

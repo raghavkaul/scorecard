@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing/format/idxfile"
 	"github.com/ossf/scorecard/v4/checker"
 	"github.com/ossf/scorecard/v4/clients"
 	sce "github.com/ossf/scorecard/v4/errors"
@@ -63,6 +64,9 @@ func CodeReview(name string, dl checker.DetailLogger,
 			continue
 		}
 
+                if rs == reviewPlatformGitHub {
+                }
+
 		totalReviewed[rs]++
 	}
 
@@ -76,7 +80,7 @@ func CodeReview(name string, dl checker.DetailLogger,
 	totalCommits := len(r.DefaultBranchCommits)
 	// Consider a single review system.
 	nbReviews, reviewSystem := computeReviews(totalReviewed)
-	if nbReviews == totalCommits {
+    	if nbReviews == totalCommits {
 		return checker.CreateMaxScoreResult(name,
 			fmt.Sprintf("all last %v commits are reviewed through %s", totalCommits, reviewSystem))
 	}
@@ -124,33 +128,9 @@ func getApprovedReviewSystem(c *clients.Commit, dl checker.DetailLogger) string 
 
 func isReviewedOnGitHub(c *clients.Commit, dl checker.DetailLogger) bool {
 	mr := c.AssociatedMergeRequest
-	if mr.MergedAt.IsZero() {
-		return false
-	}
 
-	for _, r := range mr.Reviews {
-		if r.State == "APPROVED" {
-			dl.Debug(&checker.LogMessage{
-				Text: fmt.Sprintf("commit %s was reviewed through %s #%d approved merge request",
-					c.SHA, reviewPlatformGitHub, mr.Number),
-			})
-			return true
-		}
-	}
+        return !mr.MergedAt.IsZero()
 
-	// Check if the merge request is committed by someone other than author. This is kind
-	// of equivalent to a review and is done several times on small prs to save
-	// time on clicking the approve button.
-	if c.Committer.Login != "" &&
-		c.Committer.Login != mr.Author.Login {
-		dl.Debug(&checker.LogMessage{
-			Text: fmt.Sprintf("commit %s was reviewed through %s #%d merge request",
-				c.SHA, reviewPlatformGitHub, mr.Number),
-		})
-		return true
-	}
-
-	return false
 }
 
 func isReviewedOnProw(c *clients.Commit, dl checker.DetailLogger) bool {
@@ -223,3 +203,69 @@ func isReviewedOnPiper(c *clients.Commit, dl checker.DetailLogger) bool {
 	}
 	return false
 }
+
+func reviewScoreForGitHub(commit *clients.Commit, c *checker.ContributorsData, dl checker.DetailLogger) int {
+        pull := commit.AssociatedMergeRequest
+
+        reviewState := NoReview
+
+        if len(pull.Reviews) == 0 {
+		dl.Info(&checker.LogMessage{
+			Text: fmt.Sprintf("commit %s was opened on Github (#%d) but merged without review",
+				commit.SHA, reviewPlatformGitHub, pull.Number),
+		})
+                return reviewState
+        }
+
+        // Check if the PR was 'approved' by looking at the newest review. This
+        // helps address situations where changes were requested and subsequently
+        // made by the author, and that PR conversations are 'resolved' by an
+        // approving review
+
+        for _, r := range pull.Reviews {
+                if pull.Author.Login == r.Author.Login {
+                        continue // Skip self-reviews (is this possible?) and self-comments
+                }
+                maintainerReview := IsMaintainer(r.Author.Login, c)
+                if r.State == "APPROVED" && maintainerReview {
+                        reviewState = ApprovalByMaintainer
+                } else if r.State == "APPROVED" && !maintainerReview && reviewState != ApprovalByMaintainer {
+                        reviewState = Approval
+                } else if r.State == "NEEDS_CHANGES" && !(reviewState == ApprovalByMaintainer && !maintainerReview) {
+                        reviewState = UnresolvedDiscussion
+                }
+        }
+        
+        if commit.Committer.Login != "" &&
+                // Check if the merge request is committed by someone other than author. This is kind
+                // of equivalent to a review and is done several times on small prs to save
+                // time on clicking the approve button.
+		commit.Committer.Login != pull.Author.Login {
+		dl.Debug(&checker.LogMessage{
+			Text: fmt.Sprintf("commit %s was reviewed through %s #%d merge request",
+				commit.SHA, reviewPlatformGitHub, pull.Number),
+		})
+               
+                // Discourage merging with UnresolvedDiscussions
+                if reviewState != UnresolvedDiscussion {
+                    reviewState = ApprovalByMaintainer
+                }
+	}
+
+        return reviewState
+}
+
+// Ensure that a pull request was reviewed by a maintainer to that repo
+// In this case, we define 'maintainer' loosely to mean 'this individual
+// has write access'.
+// TODO: Weight reviews by more recognized contributors more
+func IsMaintainer(login string, c *checker.ContributorsData) bool {
+	for _, contributor := range c.Contributors {
+		if contributor.User.Login == login {
+			return contributor.IsWriter
+		}
+	}
+
+        return false
+}
+

@@ -119,16 +119,16 @@ type LicenseData struct {
 	Files []File
 }
 
+// SmartCodeReviewData contains the raw results
+// for the Code-Review check.
+type SmartCodeReviewData struct {
+	DefaultBranchPulls []clients.PullRequest
+}
+
 // CodeReviewData contains the raw results
 // for the Code-Review check.
 type CodeReviewData struct {
 	DefaultBranchCommits []clients.Commit
-}
-
-// SmartCodeReviewData contains the raw results
-// for the Smart-Code-Review check.
-type SmartCodeReviewData struct {
-	DefaultBranchPulls []clients.PullRequest
 }
 
 type RepoContributor struct {
