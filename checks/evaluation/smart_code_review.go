@@ -21,14 +21,6 @@ import (
 	"github.com/ossf/scorecard/v4/clients"
 )
 
-// Review levels. Allows us to grant 'partial credit' for Code Review
-const (
-	NoReview             int = 0 // Changes were not reviewed before merging
-	UnresolvedDiscussion     = 0 // Changes were reviewed, but not approved
-	Approval                 = 1 // Some revisions in this set of changes were approved by someone
-	ApprovalByMaintainer     = 2 // The approver has write access, but there may be unreviewed commits
-        ExternalPlatformApproval = 2 // Commit was reviewed & approved outside of GitHub
-)
 
 func SmartCodeReview(name string, dl checker.DetailLogger,
 	d *checker.SmartCodeReviewData, c *checker.ContributorsData,

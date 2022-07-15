@@ -132,8 +132,8 @@ type CodeReviewData struct {
 }
 
 type RepoContributor struct {
-	User     clients.User
-	IsWriter bool
+        User            clients.User
+	RepoAssociation clients.RepoAssociation
 }
 
 // ContributorsData represents contributor information.

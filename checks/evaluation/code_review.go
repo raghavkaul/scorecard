@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-git/go-git/v5/plumbing/format/idxfile"
 	"github.com/ossf/scorecard/v4/checker"
 	"github.com/ossf/scorecard/v4/clients"
 	sce "github.com/ossf/scorecard/v4/errors"
@@ -64,8 +63,8 @@ func CodeReview(name string, dl checker.DetailLogger,
 			continue
 		}
 
-                if rs == reviewPlatformGitHub {
-                }
+		if rs == reviewPlatformGitHub {
+		}
 
 		totalReviewed[rs]++
 	}
@@ -80,7 +79,7 @@ func CodeReview(name string, dl checker.DetailLogger,
 	totalCommits := len(r.DefaultBranchCommits)
 	// Consider a single review system.
 	nbReviews, reviewSystem := computeReviews(totalReviewed)
-    	if nbReviews == totalCommits {
+	if nbReviews == totalCommits {
 		return checker.CreateMaxScoreResult(name,
 			fmt.Sprintf("all last %v commits are reviewed through %s", totalCommits, reviewSystem))
 	}
@@ -129,7 +128,7 @@ func getApprovedReviewSystem(c *clients.Commit, dl checker.DetailLogger) string 
 func isReviewedOnGitHub(c *clients.Commit, dl checker.DetailLogger) bool {
 	mr := c.AssociatedMergeRequest
 
-        return !mr.MergedAt.IsZero()
+	return !mr.MergedAt.IsZero()
 
 }
 
@@ -204,55 +203,97 @@ func isReviewedOnPiper(c *clients.Commit, dl checker.DetailLogger) bool {
 	return false
 }
 
+const (
+	NoReview            int = 0 // No approving review by contributors before merge
+        // TODO partial credit for approval doesn't come from contributor w/ write access
+        // TODO partial credir for discussion?
+        // TODO partial credit for resolving comments?
+	Reviewed                = 1 // Changes were reviewed by contributor w/ write access
+	ReviewedAtHead          = 2 // All changes were reviewed
+	ReviewedAndResolved     = 3 // All changes were reviewed and all conversations were resolved
+        ReviewedOutsideGithub   = 3 // Changes were reviewed & approved outside Github. Full marks since
+                                    // we can't look at details at those platforms yet
+)
+
+// Review levels. Allows us to grant 'partial credit' for Code Review
+const (
+	UnresolvedDiscussion     = 0 // Changes were reviewed, but not approved
+	Approval                 = 1 // Some revisions in this set of changes were approved by someone
+	ApprovalByMaintainer     = 2 // The approver has write access, but there may be unreviewed commits
+	ExternalPlatformApproval = 2 // Commit was reviewed & approved outside of GitHub
+)
+
+func reviewScoreForGitHub2(pull clients.PullRequest, c *checker.ContributorsData, dl checker.DetailLogger) int {
+        score := NoReview
+
+
+	if !pull.MergedAt.IsZero() && len(pull.Reviews) == 0 {
+		dl.Info(&checker.LogMessage{
+			Text: fmt.Sprintf("Pull %d was opened on Github but merged without review", pull.Number),
+		})
+		return score
+	}
+
+        for _, r := range pull.Reviews {
+                if IsMaintainer(r.Author.Login, c) {
+                        score = math.Max(score, Reviewed)
+                }
+        }
+
+
+        return score
+}
+
+
 func reviewScoreForGitHub(commit *clients.Commit, c *checker.ContributorsData, dl checker.DetailLogger) int {
-        pull := commit.AssociatedMergeRequest
+	pull := commit.AssociatedMergeRequest
 
-        reviewState := NoReview
+	reviewState := NoReview
 
-        if len(pull.Reviews) == 0 {
+	if len(pull.Reviews) == 0 {
 		dl.Info(&checker.LogMessage{
 			Text: fmt.Sprintf("commit %s was opened on Github (#%d) but merged without review",
 				commit.SHA, reviewPlatformGitHub, pull.Number),
 		})
-                return reviewState
-        }
+		return reviewState
+	}
 
-        // Check if the PR was 'approved' by looking at the newest review. This
-        // helps address situations where changes were requested and subsequently
-        // made by the author, and that PR conversations are 'resolved' by an
-        // approving review
+	// Check if the PR was 'approved' by looking at the newest review. This
+	// helps address situations where changes were requested and subsequently
+	// made by the author, and that PR conversations are 'resolved' by an
+	// approving review
 
-        for _, r := range pull.Reviews {
-                if pull.Author.Login == r.Author.Login {
-                        continue // Skip self-reviews (is this possible?) and self-comments
-                }
-                maintainerReview := IsMaintainer(r.Author.Login, c)
-                if r.State == "APPROVED" && maintainerReview {
-                        reviewState = ApprovalByMaintainer
-                } else if r.State == "APPROVED" && !maintainerReview && reviewState != ApprovalByMaintainer {
-                        reviewState = Approval
-                } else if r.State == "NEEDS_CHANGES" && !(reviewState == ApprovalByMaintainer && !maintainerReview) {
-                        reviewState = UnresolvedDiscussion
-                }
-        }
-        
-        if commit.Committer.Login != "" &&
-                // Check if the merge request is committed by someone other than author. This is kind
-                // of equivalent to a review and is done several times on small prs to save
-                // time on clicking the approve button.
+	for _, r := range pull.Reviews {
+		if pull.Author.Login == r.Author.Login {
+			continue // Skip self-reviews (is this possible?) and self-comments
+		}
+		maintainerReview := IsMaintainer(r.Author.Login, c)
+		if r.State == "APPROVED" && maintainerReview {
+			reviewState = ApprovalByMaintainer
+		} else if r.State == "APPROVED" && !maintainerReview && reviewState != ApprovalByMaintainer {
+			reviewState = Approval
+		} else if r.State == "NEEDS_CHANGES" && !(reviewState == ApprovalByMaintainer && !maintainerReview) {
+			reviewState = UnresolvedDiscussion
+		}
+	}
+
+	if commit.Committer.Login != "" &&
+		// Check if the merge request is committed by someone other than author. This is kind
+		// of equivalent to a review and is done several times on small prs to save
+		// time on clicking the approve button.
 		commit.Committer.Login != pull.Author.Login {
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("commit %s was reviewed through %s #%d merge request",
 				commit.SHA, reviewPlatformGitHub, pull.Number),
 		})
-               
-                // Discourage merging with UnresolvedDiscussions
-                if reviewState != UnresolvedDiscussion {
-                    reviewState = ApprovalByMaintainer
-                }
+
+		// Discourage merging with UnresolvedDiscussions
+		if reviewState != UnresolvedDiscussion {
+			reviewState = ApprovalByMaintainer
+		}
 	}
 
-        return reviewState
+	return reviewState
 }
 
 // Ensure that a pull request was reviewed by a maintainer to that repo
@@ -266,6 +307,5 @@ func IsMaintainer(login string, c *checker.ContributorsData) bool {
 		}
 	}
 
-        return false
+	return false
 }
-
