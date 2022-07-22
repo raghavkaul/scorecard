@@ -208,6 +208,8 @@ const (
         // TODO partial credit for approval doesn't come from contributor w/ write access
         // TODO partial credir for discussion?
         // TODO partial credit for resolving comments?
+        // TODO extra credit for number of reviewers (more eyes on a project)
+        // TODO 
 	Reviewed                = 1 // Changes were reviewed by contributor w/ write access
 	ReviewedAtHead          = 2 // All changes were reviewed
 	ReviewedAndResolved     = 3 // All changes were reviewed and all conversations were resolved
@@ -223,7 +225,7 @@ const (
 	ExternalPlatformApproval = 2 // Commit was reviewed & approved outside of GitHub
 )
 
-func reviewScoreForGitHub2(pull clients.PullRequest, c *checker.ContributorsData, dl checker.DetailLogger) int {
+func reviewScoreForGitHub2(pull clients.PullRequest, r *checker.ReviewData, c *checker.ContributorsData, dl checker.DetailLogger) int {
         score := NoReview
 
 
@@ -231,14 +233,29 @@ func reviewScoreForGitHub2(pull clients.PullRequest, c *checker.ContributorsData
 		dl.Info(&checker.LogMessage{
 			Text: fmt.Sprintf("Pull %d was opened on Github but merged without review", pull.Number),
 		})
-		return score
+		return score // -> NoReview
 	}
+        
+        reviewers := map[string]string {}
 
+        // TODO: Need to do this in reverse order, otherwise older reviews overwrite newer ones
         for _, r := range pull.Reviews {
-                if IsMaintainer(r.Author.Login, c) {
-                        score = math.Max(score, Reviewed)
+                reviewers[r.Author.Login] = r.State
+        }
+
+        for login, state := range reviewers {
+                if state == "APPROVED" && IsMaintainer(login, c) {
+                        score = Reviewed
+                        break
                 }
         }
+
+        // TODO 
+        for _, r := range pull.Reviews {
+                
+        }
+
+
 
 
         return score
