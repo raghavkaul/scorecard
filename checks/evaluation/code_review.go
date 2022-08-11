@@ -203,31 +203,75 @@ func isReviewedOnPiper(c *clients.Commit, dl checker.DetailLogger) bool {
 	return false
 }
 
+// Each value is a single changeset, keyed by the HEAD commit SHA for that set of commits
+// Need this because in GitHub, entire changesets
+type Changesets map[string][]clients.Commit
+
+// Group commits by the changeset they belong to
+// Commits must be in-order
+func getChangesets(commits []clients.Commit, window int) Changesets {
+	changesets := make(Changesets)
+
+	if len(commits) < window {
+		window = len(commits)
+	}
+
+	currentMrNo := commits[0].AssociatedMergeRequest.Number
+	currentMrHEAD := commits[0].SHA
+	j := 0
+
+	for i := 1; i < window; i++ {
+		commit := commits[i]
+
+		mrNo := commit.AssociatedMergeRequest.Number
+		if mrNo != currentMrNo {
+			changesets[currentMrHEAD] = commits[j:i]
+			// Add all previous commits to the 'batch' of a single changeset
+			j = i
+			currentMrNo = mrNo
+			currentMrHEAD = commit.SHA
+		}
+	}
+
+	return changesets
+}
+
 const (
-	NoReview            int = 0 // No approving review by contributors before merge
-        // TODO partial credit for approval doesn't come from contributor w/ write access
-        // TODO partial credir for discussion?
-        // TODO partial credit for resolving comments?
-        // TODO extra credit for number of reviewers (more eyes on a project)
-        // TODO 
-	Reviewed                = 1 // Changes were reviewed by contributor w/ write access
-	ReviewedAtHead          = 2 // All changes were reviewed
-	ReviewedAndResolved     = 3 // All changes were reviewed and all conversations were resolved
-        ReviewedOutsideGithub   = 3 // Changes were reviewed & approved outside Github. Full marks since
-                                    // we can't look at details at those platforms yet
+	// TODO More partial credit? E.g. approval from non-contributor, discussion liveness,
+	// number of resolved comments, number of approvers (more eyes on a project) ?
+	NoReview                     int = 0 // No approving review by contributors before merge
+	Reviewed                         = 1 // Changes were reviewed by contributor w/ write access
+	Approved                         = 2 // Changes were approved by contributor w/ write access
+	ApprovedAtHead                   = 3 // The HEAD revision of this changeset received an approval
+	ApprovedWithCommentsResolved     = 4 // All revisions were approved and discussions were resolved
+	ApprovedOutsideGithub            = 4 // Changes were reviewed & approved outside Github. Full marks
+	// since we can't look at details at those platforms yet
 )
 
-// Review levels. Allows us to grant 'partial credit' for Code Review
-const (
-	UnresolvedDiscussion     = 0 // Changes were reviewed, but not approved
-	Approval                 = 1 // Some revisions in this set of changes were approved by someone
-	ApprovalByMaintainer     = 2 // The approver has write access, but there may be unreviewed commits
-	ExternalPlatformApproval = 2 // Commit was reviewed & approved outside of GitHub
-)
+func reviewScoreForGitHub2(changesets Changesets, c *checker.ContributorsData, dl checker.DetailLogger) int {
+	for changeset := range changesets {
+	}
 
-func reviewScoreForGitHub2(pull clients.PullRequest, r *checker.ReviewData, c *checker.ContributorsData, dl checker.DetailLogger) int {
-        score := NoReview
+}
 
+func reviewScoreForChangeset(headSHA string, commits []clients.Commit) {
+	// A Changeset is a list of commits plus a pull request
+
+	// List all PR comments for this Changeset
+	// Get state of all PR comments
+	// If any PR comments state is unresolved then comments are not resolved
+
+	// Get the Head SHA for this Changeset
+	// Get the reviews for that Head SHA
+	// If there is an approving review by a contributor with write access, ApprovedAtHead
+	// If comments are also all resolved, then ApprovedWithCommentsResolved
+
+	// At this point, we know that the Head SHA does not have an approval
+	// So, look backwards through the changeset. Find atleast one approval
+	// If you find any reviews, then Reviewed (maybe this is just a 0?)
+	// If you find a single approval, then Approved
+
+	// At this point, you've found nothing, so return NoReview
 
 	if !pull.MergedAt.IsZero() && len(pull.Reviews) == 0 {
 		dl.Info(&checker.LogMessage{
@@ -235,32 +279,28 @@ func reviewScoreForGitHub2(pull clients.PullRequest, r *checker.ReviewData, c *c
 		})
 		return score // -> NoReview
 	}
-        
-        reviewers := map[string]string {}
 
-        // TODO: Need to do this in reverse order, otherwise older reviews overwrite newer ones
-        for _, r := range pull.Reviews {
-                reviewers[r.Author.Login] = r.State
-        }
+	reviewers := map[string]string{}
 
-        for login, state := range reviewers {
-                if state == "APPROVED" && IsMaintainer(login, c) {
-                        score = Reviewed
-                        break
-                }
-        }
+	// TODO: Need to do this in reverse order, otherwise older reviews overwrite newer ones
+	for _, r := range pull.Reviews {
+		reviewers[r.Author.Login] = r.State
+	}
 
-        // TODO 
-        for _, r := range pull.Reviews {
-                
-        }
+	for login, state := range reviewers {
+		if state == "APPROVED" && IsMaintainer(login, c) {
+			score = Reviewed
+			break
+		}
+	}
 
+	// TODO
+	for _, r := range pull.Reviews {
 
+	}
 
-
-        return score
+	return score
 }
-
 
 func reviewScoreForGitHub(commit *clients.Commit, c *checker.ContributorsData, dl checker.DetailLogger) int {
 	pull := commit.AssociatedMergeRequest
