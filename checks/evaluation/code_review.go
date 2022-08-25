@@ -15,7 +15,9 @@
 package evaluation
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ossf/scorecard/v4/checker"
@@ -125,19 +127,19 @@ func getApprovedReviewSystem(c *clients.Commit, dl checker.DetailLogger) string 
 	return ""
 }
 
-func isReviewedOnGitHub(c *clients.Commit, dl checker.DetailLogger) bool {
+func isReviewedOnGitHub(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
 	mr := c.AssociatedMergeRequest
 
-	return !mr.MergedAt.IsZero()
+	return !mr.MergedAt.IsZero(), strconv.Itoa(mr.Number)
 
 }
 
-func isReviewedOnProw(c *clients.Commit, dl checker.DetailLogger) bool {
+func isReviewedOnProw(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
 	if isBot(c.Committer.Login) {
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("skip commit %s from bot account: %s", c.SHA, c.Committer.Login),
 		})
-		return true
+		return true, ""
 	}
 
 	if !c.AssociatedMergeRequest.MergedAt.IsZero() {
@@ -147,19 +149,19 @@ func isReviewedOnProw(c *clients.Commit, dl checker.DetailLogger) bool {
 					Text: fmt.Sprintf("commit %s review was through %s #%d approved merge request",
 						c.SHA, reviewPlatformProw, c.AssociatedMergeRequest.Number),
 				})
-				return true
+				return true, ""
 			}
 		}
 	}
-	return false
+	return false, ""
 }
 
-func isReviewedOnGerrit(c *clients.Commit, dl checker.DetailLogger) bool {
+func isReviewedOnGerrit(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
 	if isBot(c.Committer.Login) {
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("skip commit %s from bot account: %s", c.SHA, c.Committer.Login),
 		})
-		return true
+		return true, ""
 	}
 
 	m := c.Message
@@ -168,17 +170,17 @@ func isReviewedOnGerrit(c *clients.Commit, dl checker.DetailLogger) bool {
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformGerrit),
 		})
-		return true
+		return true, ""
 	}
-	return false
+	return false, ""
 }
 
-func isReviewedOnPhabricator(c *clients.Commit, dl checker.DetailLogger) bool {
+func isReviewedOnPhabricator(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
 	if isBot(c.Committer.Login) {
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("skip commit %s from bot account: %s", c.SHA, c.Committer.Login),
 		})
-		return true
+		return true, ""
 	}
 
 	m := c.Message
@@ -187,49 +189,89 @@ func isReviewedOnPhabricator(c *clients.Commit, dl checker.DetailLogger) bool {
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformPhabricator),
 		})
-		return true
+		// FIXME: Use regular expressions
+		phabricatorDifferentialRevision := strings.SplitN(m, ":", 2)[1]
+		return true, phabricatorDifferentialRevision
 	}
-	return false
+	return false, ""
 }
 
-func isReviewedOnPiper(c *clients.Commit, dl checker.DetailLogger) bool {
+func isReviewedOnPiper(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
 	m := c.Message
 	if strings.Contains(m, "\nPiperOrigin-RevId: ") {
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformPiper),
 		})
-		return true
+		// FIXME: Use regular expressions
+		piperRevisionId := strings.SplitN(m, ":", 2)[1]
+		return true, piperRevisionId
 	}
-	return false
+	return false, ""
 }
 
-type Changeset = []clients.Commit
+type Changeset struct {
+	Commits        []clients.Commit
+	ReviewPlatform string
+	RevisionId     string
+}
 
 // Group, at maximum, N=`window` commits by the changeset they belong to
 // Commits must be in-order
-func getChangesets(commits []clients.Commit, window int) []Changeset {
-	changesets := [][]clients.Commit{}
+func getChangesets(commits []clients.Commit, window int, dl checker.DetailLogger) []Changeset {
+	changesets := []Changeset{}
 
 	if len(commits) < window {
 		window = len(commits)
 	}
 
-	currentMrNo := commits[0].AssociatedMergeRequest.Number
+	currentReviewPlatform, currentRevision, _ := getCommitRevisionByPlatform(&commits[0], dl)
+
 	j := 0
 
 	for i := 1; i < window; i++ {
 		commit := commits[i]
 
-		mrNo := commit.AssociatedMergeRequest.Number
-		if mrNo != currentMrNo {
-			changesets = append(changesets, commits[j:i])
+		reviewPlatform, revision, err := getCommitRevisionByPlatform(&commit, dl)
+
+		if err != nil || revision != currentRevision || reviewPlatform != currentReviewPlatform {
+			changesets = append(changesets, Changeset{commits[j:i], reviewPlatform, currentRevision})
 			// Add all previous commits to the 'batch' of a single changeset
 			j = i
-			currentMrNo = mrNo
+			currentRevision = revision
+			currentReviewPlatform = reviewPlatform
 		}
 	}
 
 	return changesets
+}
+
+func getCommitRevisionByPlatform(c *clients.Commit, dl checker.DetailLogger) (string, string, error) {
+	foundRev, revisionId := isReviewedOnGitHub(c, dl)
+	if foundRev {
+		return reviewPlatformGitHub, revisionId, nil
+	}
+
+	foundRev, revisionId = isReviewedOnProw(c, dl)
+	if foundRev {
+		return reviewPlatformProw, revisionId, nil
+	}
+
+	foundRev, revisionId = isReviewedOnGerrit(c, dl)
+	if foundRev {
+		return reviewPlatformGerrit, revisionId, nil
+	}
+
+	foundRev, revisionId = isReviewedOnPhabricator(c, dl)
+	if foundRev {
+		return reviewPlatformPhabricator, revisionId, nil
+	}
+
+	foundRev, revisionId = isReviewedOnPiper(c, dl)
+	if foundRev {
+		return reviewPlatformPiper, revisionId, nil
+	}
+
+	return "", "", errors.New("")
 }
 
 type ReviewScore = int
@@ -246,40 +288,33 @@ const (
 	// since we can't look at details at those platforms yet
 )
 
-func reviewScoreForGitHub2(changesets []Changeset, c *checker.ContributorsData, dl checker.DetailLogger) float32 {
-	sum := 0
+func reviewScoreForGitHub2(changesets []Changeset, c *checker.ContributorsData, dl checker.DetailLogger) float64 {
+	sum := 0.0
 	for _, changeset := range changesets {
-		sum += reviewScoreForChangeset(changeset)
+		sum += float64(reviewScoreForChangeset(changeset, c))
 	}
 
-	return sum / len(changesets)
+	return sum / float64(len(changesets))
 
 }
 
-func reviewScoreForChangeset(commits []clients.Commit) (score ReviewScore) {
+func reviewScoreForChangeset(changeset Changeset, c *checker.ContributorsData) (score ReviewScore) {
 	score = NoReview
 	// A Changeset is a list of commits plus a pull request
 
 	// List all PR comments for this Changeset
 	// Get state of all PR comments
 	// If any PR comments state is unresolved then comments are not resolved
-	if len(commits) <= 1 {
+	if len(changeset.Commits) <= 1 {
 		// Handle
 	}
 
-	mr := commits[0].AssociatedMergeRequest
-
-	for i := range commits {
-		if commits[i].AssociatedMergeRequest.Number != 0 {
-			mr = commits[i].AssociatedMergeRequest
-			break
-		}
-	}
-
-	if mr.Number == 0 || mr.MergedAt.IsZero() {
+	if changeset.ReviewPlatform != reviewPlatformGitHub {
 		score = ApprovedOutsideGithub
 		return
 	}
+
+	mr := changeset.Commits[0].AssociatedMergeRequest
 
 	// Get the Head SHA for this Changeset
 	// Get the reviews for that Head SHA
@@ -290,7 +325,20 @@ func reviewScoreForChangeset(commits []clients.Commit) (score ReviewScore) {
 	}
 
 	for _, review := range mr.Reviews {
-		if review.State == "APPROVED" && review.Author.CanContribute {
+
+		if review.State == "APPROVED" {
+			isContributor := false
+
+			for _, c := range c.Contributors {
+				if c.User.Login == review.Author.Login {
+					isContributor = c.RepoAssociation.Gte(user.RepoAssocation.RepoAssociationContributor)
+				}
+			}
+
+			if !isContributor {
+				continue
+			}
+
 			score = Approved
 
 			if review.SHA == headSHA {
@@ -308,69 +356,4 @@ func reviewScoreForChangeset(commits []clients.Commit) (score ReviewScore) {
 	}
 
 	return
-}
-
-func reviewScoreForGitHub(commit *clients.Commit, c *checker.ContributorsData, dl checker.DetailLogger) int {
-	pull := commit.AssociatedMergeRequest
-
-	reviewState := NoReview
-
-	if len(pull.Reviews) == 0 {
-		dl.Info(&checker.LogMessage{
-			Text: fmt.Sprintf("commit %s was opened on Github (#%d) but merged without review",
-				commit.SHA, reviewPlatformGitHub, pull.Number),
-		})
-		return reviewState
-	}
-
-	// Check if the PR was 'approved' by looking at the newest review. This
-	// helps address situations where changes were requested and subsequently
-	// made by the author, and that PR conversations are 'resolved' by an
-	// approving review
-
-	for _, r := range pull.Reviews {
-		if pull.Author.Login == r.Author.Login {
-			continue // Skip self-reviews (is this possible?) and self-comments
-		}
-		maintainerReview := IsMaintainer(r.Author.Login, c)
-		if r.State == "APPROVED" && maintainerReview {
-			reviewState = ApprovalByMaintainer
-		} else if r.State == "APPROVED" && !maintainerReview && reviewState != ApprovalByMaintainer {
-			reviewState = Approval
-		} else if r.State == "NEEDS_CHANGES" && !(reviewState == ApprovalByMaintainer && !maintainerReview) {
-			reviewState = UnresolvedDiscussion
-		}
-	}
-
-	if commit.Committer.Login != "" &&
-		// Check if the merge request is committed by someone other than author. This is kind
-		// of equivalent to a review and is done several times on small prs to save
-		// time on clicking the approve button.
-		commit.Committer.Login != pull.Author.Login {
-		dl.Debug(&checker.LogMessage{
-			Text: fmt.Sprintf("commit %s was reviewed through %s #%d merge request",
-				commit.SHA, reviewPlatformGitHub, pull.Number),
-		})
-
-		// Discourage merging with UnresolvedDiscussions
-		if reviewState != UnresolvedDiscussion {
-			reviewState = ApprovalByMaintainer
-		}
-	}
-
-	return reviewState
-}
-
-// Ensure that a pull request was reviewed by a maintainer to that repo
-// In this case, we define 'maintainer' loosely to mean 'this individual
-// has write access'.
-// TODO: Weight reviews by more recognized contributors more
-func IsMaintainer(login string, c *checker.ContributorsData) bool {
-	for _, contributor := range c.Contributors {
-		if contributor.User.Login == login {
-			return contributor.IsWriter
-		}
-	}
-
-	return false
 }
