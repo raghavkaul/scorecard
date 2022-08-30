@@ -37,7 +37,7 @@ func init() {
 
 // CodeReview will check if the maintainers perform code review.
 func CodeReview(c *checker.CheckRequest) checker.CheckResult {
-	rawData, err := raw.CodeReview(c.RepoClient)
+	rawData, contributorsData, err := raw.CodeReview(c.RepoClient)
 	if err != nil {
 		e := sce.WithMessage(sce.ErrScorecardInternal, err.Error())
 		return checker.CreateRuntimeErrorResult(CheckCodeReview, e)
@@ -49,5 +49,5 @@ func CodeReview(c *checker.CheckRequest) checker.CheckResult {
 	}
 
 	// Return the score evaluation.
-	return evaluation.CodeReview(CheckCodeReview, c.Dlogger, &rawData)
+	return evaluation.CodeReview(CheckCodeReview, c.Dlogger, &rawData, &contributorsData)
 }

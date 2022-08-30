@@ -22,11 +22,11 @@ import (
 )
 
 // CodeReview retrieves the raw data for the Code-Review check.
-func CodeReview(c clients.RepoClient) (checker.CodeReviewData, error) {
+func CodeReview(c clients.RepoClient) (checker.CodeReviewData, checker.ContributorsData, error) {
 	// Look at the latest commits.
 	commits, err := c.ListCommits()
 	if err != nil {
-		return checker.CodeReviewData{}, fmt.Errorf("%w", err)
+		return checker.CodeReviewData{}, checker.ContributorsData{}, fmt.Errorf("%w", err)
 	}
 
 	return checker.CodeReviewData{

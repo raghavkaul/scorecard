@@ -17,6 +17,7 @@ package evaluation
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -35,7 +36,7 @@ const (
 
 // CodeReview applies the score policy for the Code-Review check.
 func CodeReview(name string, dl checker.DetailLogger,
-	r *checker.CodeReviewData,
+	r *checker.CodeReviewData, c *checker.ContributorsData,
 ) checker.CheckResult {
 	if r == nil {
 		e := sce.WithMessage(sce.ErrScorecardInternal, "empty raw data")
@@ -46,60 +47,19 @@ func CodeReview(name string, dl checker.DetailLogger,
 		return checker.CreateInconclusiveResult(name, "no commits found")
 	}
 
-	totalReviewed := map[string]int{
-		reviewPlatformGitHub:      0,
-		reviewPlatformProw:        0,
-		reviewPlatformGerrit:      0,
-		reviewPlatformPhabricator: 0,
-		reviewPlatformPiper:       0,
-	}
+	changesets := getChangesets(r.DefaultBranchCommits, dl)
 
-	for i := range r.DefaultBranchCommits {
-		commit := r.DefaultBranchCommits[i]
-
-		rs := getApprovedReviewSystem(&commit, dl)
-		if rs == "" {
-			dl.Warn(&checker.LogMessage{
-				Text: fmt.Sprintf("no reviews found for commit: %s", commit.SHA),
-			})
-			continue
-		}
-
-		if rs == reviewPlatformGitHub {
-		}
-
-		totalReviewed[rs]++
-	}
-
-	if totalReviewed[reviewPlatformGitHub] == 0 &&
-		totalReviewed[reviewPlatformGerrit] == 0 &&
-		totalReviewed[reviewPlatformProw] == 0 &&
-		totalReviewed[reviewPlatformPhabricator] == 0 && totalReviewed[reviewPlatformPiper] == 0 {
-		return checker.CreateMinScoreResult(name, "no reviews found")
-	}
-
-	totalCommits := len(r.DefaultBranchCommits)
-	// Consider a single review system.
-	nbReviews, reviewSystem := computeReviews(totalReviewed)
-	if nbReviews == totalCommits {
-		return checker.CreateMaxScoreResult(name,
-			fmt.Sprintf("all last %v commits are reviewed through %s", totalCommits, reviewSystem))
-	}
-
-	reason := fmt.Sprintf("%s code reviews found for %v commits out of the last %v", reviewSystem, nbReviews, totalCommits)
-	return checker.CreateProportionalScoreResult(name, reason, nbReviews, totalCommits)
-}
-
-func computeReviews(m map[string]int) (int, string) {
-	n := 0
-	s := ""
-	for k, v := range m {
-		if v > n {
-			n = v
-			s = k
+	score := 0
+	numReviewed := 0
+	for _, changeset := range changesets {
+		score += reviewScoreForChangeset(changeset, c)
+		if score >= Reviewed {
+			numReviewed += 1
 		}
 	}
-	return n, s
+	reason := fmt.Sprintf("%v out of last %v changesets were reviewed before merge", numReviewed, len(changesets))
+
+	return checker.CreateProportionalScoreResult(name, reason, score, len(changesets))
 }
 
 func isBot(name string) bool {
@@ -109,22 +69,6 @@ func isBot(name string) bool {
 		}
 	}
 	return false
-}
-
-func getApprovedReviewSystem(c *clients.Commit, dl checker.DetailLogger) string {
-	switch {
-	case isReviewedOnGitHub(c, dl):
-		return reviewPlatformGitHub
-	case isReviewedOnProw(c, dl):
-		return reviewPlatformProw
-	case isReviewedOnGerrit(c, dl):
-		return reviewPlatformGerrit
-	case isReviewedOnPhabricator(c, dl):
-		return reviewPlatformPhabricator
-	case isReviewedOnPiper(c, dl):
-		return reviewPlatformPiper
-	}
-	return ""
 }
 
 func isReviewedOnGitHub(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
@@ -175,6 +119,23 @@ func isReviewedOnGerrit(c *clients.Commit, dl checker.DetailLogger) (bool, strin
 	return false, ""
 }
 
+// Given m, a commit message, find the Phabricator revision ID in it
+func getPhabricatorRevId(m string) (string, error) {
+	matchPhabricatorRevId, err := regexp.Compile("^Differential Revision:\\s*(\\w+)\\s+")
+
+	if err != nil {
+		return "", err
+	}
+
+	match := matchPhabricatorRevId.FindStringSubmatch(m)
+
+	if match == nil || len(match) < 2 {
+		return "", errors.New("coudn't find phabricator differential revision ID")
+	}
+
+	return match[1], nil
+}
+
 func isReviewedOnPhabricator(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
 	if isBot(c.Committer.Login) {
 		dl.Debug(&checker.LogMessage{
@@ -187,13 +148,44 @@ func isReviewedOnPhabricator(c *clients.Commit, dl checker.DetailLogger) (bool, 
 	if strings.Contains(m, "\nDifferential Revision: ") &&
 		strings.Contains(m, "\nReviewed By: ") {
 		dl.Debug(&checker.LogMessage{
-			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformPhabricator),
+			Text: fmt.Sprintf(
+				"commit %s was approved through %s",
+				c.SHA,
+				reviewPlatformPhabricator,
+			),
 		})
-		// FIXME: Use regular expressions
-		phabricatorDifferentialRevision := strings.SplitN(m, ":", 2)[1]
-		return true, phabricatorDifferentialRevision
+
+		revId, err := getPhabricatorRevId(m)
+
+		if err != nil {
+			dl.Debug(&checker.LogMessage{
+				Text: fmt.Sprintf(
+					"couldn't find phab differential revision in commit message for commit=%s",
+					c.SHA,
+				),
+			})
+		}
+
+		return true, revId
 	}
 	return false, ""
+}
+
+// Given m, a commit message, find the piper revision ID in it
+func getPiperRevId(m string) (string, error) {
+	matchPiperRevId, err := regexp.Compile(".PiperOrigin-RevId\\s+:\\s*(\\d{3,})\\s+")
+
+	if err != nil {
+		return "", err
+	}
+
+	match := matchPiperRevId.FindStringSubmatch(m)
+
+	if match == nil || len(match) < 2 {
+		return "", errors.New("coudn't find piper revision ID")
+	}
+
+	return match[1], nil
 }
 
 func isReviewedOnPiper(c *clients.Commit, dl checker.DetailLogger) (bool, string) {
@@ -202,9 +194,19 @@ func isReviewedOnPiper(c *clients.Commit, dl checker.DetailLogger) (bool, string
 		dl.Debug(&checker.LogMessage{
 			Text: fmt.Sprintf("commit %s was approved through %s", c.SHA, reviewPlatformPiper),
 		})
-		// FIXME: Use regular expressions
-		piperRevisionId := strings.SplitN(m, ":", 2)[1]
-		return true, piperRevisionId
+
+		revId, err := getPiperRevId(m)
+
+		if err != nil {
+			dl.Debug(&checker.LogMessage{
+				Text: fmt.Sprintf(
+					"couldn't find piper revision in commit message for commit=%s",
+					c.SHA,
+				),
+			})
+		}
+
+		return true, revId
 	}
 	return false, ""
 }
@@ -215,37 +217,62 @@ type Changeset struct {
 	RevisionId     string
 }
 
-// Group, at maximum, N=`window` commits by the changeset they belong to
+// Group commits by the changeset they belong to
 // Commits must be in-order
-func getChangesets(commits []clients.Commit, window int, dl checker.DetailLogger) []Changeset {
+func getChangesets(commits []clients.Commit, dl checker.DetailLogger) []Changeset {
 	changesets := []Changeset{}
 
-	if len(commits) < window {
-		window = len(commits)
+	if len(commits) == 0 {
+		return changesets
 	}
 
-	currentReviewPlatform, currentRevision, _ := getCommitRevisionByPlatform(&commits[0], dl)
+	currentReviewPlatform, currentRevision, err := getCommitRevisionByPlatform(
+		&commits[0],
+		dl,
+	)
+
+	if err != nil {
+		dl.Debug(&checker.LogMessage{Text: err.Error()})
+		changesets = append(
+			changesets,
+			Changeset{commits[0:1], currentReviewPlatform, currentRevision},
+		)
+	}
 
 	j := 0
+	for i := 0; i < len(commits); i++ {
+		if i == len(commits)-1 {
+			changesets = append(
+				changesets,
+				Changeset{commits[j:i], currentReviewPlatform, currentRevision},
+			)
+			break
+		}
 
-	for i := 1; i < window; i++ {
-		commit := commits[i]
-
-		reviewPlatform, revision, err := getCommitRevisionByPlatform(&commit, dl)
-
-		if err != nil || revision != currentRevision || reviewPlatform != currentReviewPlatform {
-			changesets = append(changesets, Changeset{commits[j:i], reviewPlatform, currentRevision})
+		nextReviewPlatform, nextRevision, err := getCommitRevisionByPlatform(&commits[i+1], dl)
+		if err != nil || nextReviewPlatform != currentReviewPlatform ||
+			nextRevision != currentRevision {
+			if err != nil {
+				dl.Debug(&checker.LogMessage{Text: err.Error()})
+			}
 			// Add all previous commits to the 'batch' of a single changeset
-			j = i
-			currentRevision = revision
-			currentReviewPlatform = reviewPlatform
+			changesets = append(
+				changesets,
+				Changeset{commits[j:i], currentReviewPlatform, currentRevision},
+			)
+			currentReviewPlatform = nextReviewPlatform
+			currentRevision = nextRevision
+			j = i + 1
 		}
 	}
 
 	return changesets
 }
 
-func getCommitRevisionByPlatform(c *clients.Commit, dl checker.DetailLogger) (string, string, error) {
+func getCommitRevisionByPlatform(
+	c *clients.Commit,
+	dl checker.DetailLogger,
+) (string, string, error) {
 	foundRev, revisionId := isReviewedOnGitHub(c, dl)
 	if foundRev {
 		return reviewPlatformGitHub, revisionId, nil
@@ -271,51 +298,37 @@ func getCommitRevisionByPlatform(c *clients.Commit, dl checker.DetailLogger) (st
 		return reviewPlatformPiper, revisionId, nil
 	}
 
-	return "", "", errors.New("")
+	return "", "", errors.New(
+		fmt.Sprintf("couldn't find linked review platform for commit %s", c.SHA),
+	)
 }
 
 type ReviewScore = int
 
+// TODO More partial credit? E.g. approval from non-contributor, discussion liveness,
+// number of resolved comments, number of approvers (more eyes on a project)
 const (
-	// TODO More partial credit? E.g. approval from non-contributor, discussion liveness,
-	// number of resolved comments, number of approvers (more eyes on a project) ?
 	NoReview                     ReviewScore = 0 // No approving review by contributors before merge
 	Reviewed                                 = 1 // Changes were reviewed by contributor w/ write access
 	Approved                                 = 2 // Changes were approved by contributor w/ write access
 	ApprovedAtHead                           = 3 // The HEAD revision of this changeset received an approval
 	ApprovedWithCommentsResolved             = 4 // All revisions were approved and discussions were resolved
-	ApprovedOutsideGithub                    = 4 // Changes were reviewed & approved outside Github. Full marks
-	// since we can't look at details at those platforms yet
+	ApprovedOutsideGithub                    = 4 // Full marks until we can check review platforms outside of GitHub
 )
-
-func reviewScoreForGitHub2(changesets []Changeset, c *checker.ContributorsData, dl checker.DetailLogger) float64 {
-	sum := 0.0
-	for _, changeset := range changesets {
-		sum += float64(reviewScoreForChangeset(changeset, c))
-	}
-
-	return sum / float64(len(changesets))
-
-}
 
 func reviewScoreForChangeset(changeset Changeset, c *checker.ContributorsData) (score ReviewScore) {
 	score = NoReview
-	// A Changeset is a list of commits plus a pull request
-
-	// List all PR comments for this Changeset
-	// Get state of all PR comments
-	// If any PR comments state is unresolved then comments are not resolved
-	if len(changeset.Commits) <= 1 {
-		// Handle
-	}
 
 	if changeset.ReviewPlatform != reviewPlatformGitHub {
 		score = ApprovedOutsideGithub
 		return
 	}
-
 	mr := changeset.Commits[0].AssociatedMergeRequest
 
+	// A Changeset is a list of commits plus a pull request
+	// List all PR comments for this Changeset
+	// Get state of all PR comments
+	// If any PR comments state is unresolved then comments are not resolved
 	// Get the Head SHA for this Changeset
 	// Get the reviews for that Head SHA
 	// If there is an approving review by a contributor with write access, ApprovedAtHead
@@ -325,23 +338,12 @@ func reviewScoreForChangeset(changeset Changeset, c *checker.ContributorsData) (
 	}
 
 	for _, review := range mr.Reviews {
-
 		if review.State == "APPROVED" {
-			isContributor := false
-
-			for _, c := range c.Contributors {
-				if c.User.Login == review.Author.Login {
-					isContributor = c.RepoAssociation.Gte(user.RepoAssocation.RepoAssociationContributor)
-				}
-			}
-
-			if !isContributor {
+			if !isContributor(review.Author.Login, c) {
 				continue
 			}
-
 			score = Approved
-
-			if review.SHA == headSHA {
+			if review.SHA == mr.HeadSHA {
 				for i := range mr.Comments {
 					comment := mr.Comments[i]
 					if comment.State == "OPEN" {
@@ -355,5 +357,16 @@ func reviewScoreForChangeset(changeset Changeset, c *checker.ContributorsData) (
 		}
 	}
 
+	return
+}
+
+func isContributor(username string, c *checker.ContributorsData) (isContributor bool) {
+	isContributor = false
+	for _, c := range c.Contributors {
+		if c.User.Login == username {
+			isContributor = c.RepoAssociation.Gte(clients.RepoAssociationContributor)
+			return
+		}
+	}
 	return
 }

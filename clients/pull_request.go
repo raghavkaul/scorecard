@@ -39,4 +39,5 @@ type Label struct {
 type Review struct {
 	Author *User
 	State  string
+	SHA    string
 }
