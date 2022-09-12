@@ -22,7 +22,8 @@ import (
 
 // RawResults contains results before a policy
 // is applied.
-// nolint
+//
+//nolint:govet
 type RawResults struct {
 	PackagingResults            PackagingData
 	CIIBestPracticesResults     CIIBestPracticesData
@@ -56,7 +57,6 @@ type PackagingData struct {
 }
 
 // Package represents a package.
-// nolint
 type Package struct {
 	// TODO: not supported yet. This needs to be unique across
 	// ecosystems: purl, OSV, CPE, etc.
@@ -122,26 +122,29 @@ type LicenseData struct {
 // CodeReviewData contains the raw results
 // for the Code-Review check.
 type CodeReviewData struct {
-	DefaultBranchCommits    []clients.Commit
 	DefaultBranchChangesets []Changeset
+	Users                   []clients.User
 }
+
+const (
+	ReviewPlatformGitHub      = "GitHub"
+	ReviewPlatformProw        = "Prow"
+	ReviewPlatformGerrit      = "Gerrit"
+	ReviewPlatformPhabricator = "Phabricator"
+	ReviewPlatformPiper       = "Piper"
+)
 
 type Changeset struct {
 	ReviewPlatform string
 	RevisionID     string
-	SourceBranch   string
-	TargetBranch   string
+	Reviews        []clients.Review
 	Commits        []clients.Commit
-}
-
-type RepoContributor struct {
-	User            clients.User
-	RepoAssociation clients.RepoAssociation
+	Authors        []clients.User
 }
 
 // ContributorsData represents contributor information.
 type ContributorsData struct {
-	Contributors []RepoContributor
+	Users []clients.User
 }
 
 // VulnerabilitiesData contains the raw results
