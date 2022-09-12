@@ -22,7 +22,7 @@ import (
 
 // RawResults contains results before a policy
 // is applied.
-//nolint
+// nolint
 type RawResults struct {
 	PackagingResults            PackagingData
 	CIIBestPracticesResults     CIIBestPracticesData
@@ -56,7 +56,7 @@ type PackagingData struct {
 }
 
 // Package represents a package.
-//nolint
+// nolint
 type Package struct {
 	// TODO: not supported yet. This needs to be unique across
 	// ecosystems: purl, OSV, CPE, etc.
@@ -122,7 +122,16 @@ type LicenseData struct {
 // CodeReviewData contains the raw results
 // for the Code-Review check.
 type CodeReviewData struct {
-	DefaultBranchCommits []clients.Commit
+	DefaultBranchCommits    []clients.Commit
+	DefaultBranchChangesets []Changeset
+}
+
+type Changeset struct {
+	ReviewPlatform string
+	RevisionID     string
+	SourceBranch   string
+	TargetBranch   string
+	Commits        []clients.Commit
 }
 
 type RepoContributor struct {
