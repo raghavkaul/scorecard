@@ -18,8 +18,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ossf/scorecard-attestor/command"
 	"github.com/spf13/cobra"
+
+	"github.com/ossf/scorecard-attestor/command"
+	"github.com/ossf/scorecard-attestor/policy"
 )
 
 func execute(t *testing.T, c *cobra.Command, args ...string) (string, error) {
@@ -35,6 +37,7 @@ func execute(t *testing.T, c *cobra.Command, args ...string) (string, error) {
 }
 
 func TestRootCmd(t *testing.T) {
+	t.Parallel()
 	tt := []struct {
 		name string
 		args []string
@@ -51,8 +54,34 @@ func TestRootCmd(t *testing.T) {
 
 	for _, tc := range tt {
 		_, err := execute(t, command.RootCmd, tc.args...)
-
 		if err != nil {
+			t.Fatalf("%s: %s", tc.name, err)
+		}
+	}
+}
+
+func TestCheckCmd(t *testing.T) {
+	t.Parallel()
+	tt := []struct {
+		name   string
+		args   []string
+		result policy.PolicyResult
+	}{
+		{
+			name: "test repo that has a binary artifact",
+			args: []string{
+				"verify",
+				"--policy=../policy/testdata/policy-binauthz.yaml",
+				"--repo-url=https://github.com/ossf-tests/scorecard-binauthz-test-bad",
+			},
+			result: policy.Fail,
+		},
+	}
+
+	for _, tc := range tt {
+		_, err := execute(t, command.RootCmd, tc.args...)
+
+		if (err == nil) != tc.result {
 			t.Fatalf("%s: %s", tc.name, err)
 		}
 	}
