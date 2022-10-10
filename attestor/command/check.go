@@ -45,9 +45,22 @@ func runCheck() (policy.PolicyResult, error) {
 
 	var attestationPolicy *policy.AttestationPolicy
 
-	attestationPolicy, err := policy.ParseAttestationPolicyFromFile(policyPath)
-	if err != nil {
-		return policy.Fail, fmt.Errorf("fail to load scorecard attestation policy: %w", err)
+	if policy.IsGCSUri(policyPath) {
+		policyContents, err := policy.FetchPolicy(policyPath)
+		if err != nil {
+			return policy.Fail, fmt.Errorf("fail to fetch scorecard attestation policy: %w", err)
+		}
+		attestationPolicy, err = policy.ParseAttestationPolicyFromYAML(policyContents)
+		if err != nil {
+			return policy.Fail, fmt.Errorf("fail to parse scorecard attestation policy: %w", err)
+		}
+	} else {
+		var err error
+		attestationPolicy, err = policy.ParseAttestationPolicyFromFile(policyPath)
+
+		if err != nil {
+			return policy.Fail, fmt.Errorf("fail to load scorecard attestation policy: %w", err)
+		}
 	}
 
 	if repoURL == "" {
