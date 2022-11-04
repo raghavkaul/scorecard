@@ -1,0 +1,6 @@
+[submodule "attestor/samples/scorecard-binauthz-test-good"]
+	path = attestor/samples/scorecard-binauthz-test-good
+	url = https://github.com/ossf-tests/scorecard-binauthz-test-good
+[submodule "attestor/samples/scorecard-binauthz-test-bad"]
+	path = attestor/samples/scorecard-binauthz-test-bad
+	url = https://github.com/ossf-tests/scorecard-binauthz-test-bad
