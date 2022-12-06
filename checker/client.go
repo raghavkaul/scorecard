@@ -66,7 +66,7 @@ func GetClients(ctx context.Context, repoURI, localURI string, logger *log.Logge
 	}
 	// TODO(repo): Should we be handling the OSS-Fuzz client error like this?
 	return githubRepo, /*repo*/
-		ghrepo.CreateGithubRepoClient(ctx, logger), /*repoClient*/
+		ghrepo.CreateGithubRepoClient(ctx, logger, githubRepo), /*repoClient*/
 		ossFuzzRepoClient, /*ossFuzzClient*/
 		clients.DefaultCIIBestPracticesClient(), /*ciiClient*/
 		clients.DefaultVulnerabilitiesClient(), /*vulnClient*/

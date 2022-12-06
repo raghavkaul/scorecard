@@ -33,7 +33,7 @@ var _ = Describe("E2E TEST:"+checks.CheckContributors, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf/scorecard")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 			req := checker.CheckRequest{

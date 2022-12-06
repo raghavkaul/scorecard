@@ -32,7 +32,7 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 		It("Should return that there are no vulnerabilities", func() {
 			repo, err := githubrepo.MakeGithubRepo("ossf/scorecard")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 
@@ -61,7 +61,7 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 		It("Should return that there are vulnerabilities", func() {
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-vulnerabilities-open62541")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 
@@ -88,7 +88,7 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 		It("Should return that there are vulnerabilities at commit", func() {
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-vulnerabilities-open62541")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, "de6367caa31b59e2156f83b04c2f30611b7ac393", 0)
 			Expect(err).Should(BeNil())
 

@@ -36,7 +36,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/airflow")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 
@@ -61,7 +61,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/airflow")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, "0a6850647e531b08f68118ff8ca20577a5b4062c", 0)
 			Expect(err).Should(BeNil())
 
@@ -85,7 +85,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 		It("Should return use of implicit code reviews at commit", func() {
 			repo, err := githubrepo.MakeGithubRepo("spring-projects/spring-framework")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, "ca5e453f87f7e84033bb90a2fb54ee9f7fc94d61", 0)
 			Expect(err).Should(BeNil())
 

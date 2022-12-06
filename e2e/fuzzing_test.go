@@ -34,7 +34,7 @@ var _ = Describe("E2E TEST:"+checks.CheckFuzzing, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("tensorflow/tensorflow")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 			ossFuzzRepoClient, err := githubrepo.CreateOssFuzzRepoClient(context.Background(), logger)
@@ -62,7 +62,7 @@ var _ = Describe("E2E TEST:"+checks.CheckFuzzing, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-fuzzing-cflite")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 			ossFuzzRepoClient, err := githubrepo.CreateOssFuzzRepoClient(context.Background(), logger)
@@ -90,7 +90,7 @@ var _ = Describe("E2E TEST:"+checks.CheckFuzzing, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-fuzzing-golang")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 			ossFuzzRepoClient, err := githubrepo.CreateOssFuzzRepoClient(context.Background(), logger)
@@ -118,7 +118,7 @@ var _ = Describe("E2E TEST:"+checks.CheckFuzzing, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-fuzzing-golang")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 			ossFuzzRepoClient, err := githubrepo.CreateOssFuzzRepoClient(context.Background(), logger)
@@ -138,7 +138,7 @@ var _ = Describe("E2E TEST:"+checks.CheckFuzzing, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-packaging-e2e")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 			ossFuzzRepoClient, err := githubrepo.CreateOssFuzzRepoClient(context.Background(), logger)

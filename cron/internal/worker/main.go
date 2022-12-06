@@ -90,7 +90,11 @@ func newScorecardWorker() (*ScorecardWorker, error) {
 
 	sw.ctx = context.Background()
 	sw.logger = log.NewLogger(log.InfoLevel)
-	sw.repoClient = githubrepo.CreateGithubRepoClient(sw.ctx, sw.logger)
+	placeholderRepo, err := githubrepo.MakeGithubRepo("ossf/scorecard")
+	if err != nil {
+		return nil, fmt.Errorf("githubrepo.MakeGithubRepo: %w", err)
+	}
+	sw.repoClient = githubrepo.CreateGithubRepoClient(sw.ctx, sw.logger, placeholderRepo)
 	sw.ciiClient = clients.BlobCIIBestPracticesClient(ciiDataBucketURL)
 	if sw.ossFuzzRepoClient, err = githubrepo.CreateOssFuzzRepoClient(sw.ctx, sw.logger); err != nil {
 		return nil, fmt.Errorf("githubrepo.CreateOssFuzzRepoClient: %w", err)

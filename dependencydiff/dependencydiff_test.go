@@ -91,11 +91,11 @@ func Test_initRepoAndClientByChecks(t *testing.T) {
 				"owner_not_exist",
 				"repo_not_exist",
 			),
-			wantRepoClient: false,
-			wantFuzzClient: false,
+			wantRepoClient: true,
+			wantFuzzClient: true,
 			wantVulnClient: false,
 			wantCIIClient:  false,
-			wantErr:        true,
+			wantErr:        false,
 		},
 		// Same as the above, putting the normal responses to the e2e test.
 	}

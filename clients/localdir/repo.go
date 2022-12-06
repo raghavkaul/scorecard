@@ -47,6 +47,10 @@ func (r *repoLocal) Org() clients.Repo {
 	return nil
 }
 
+func (r *repoLocal) Host() string {
+	return ""
+}
+
 // IsValid implements Repo.IsValid.
 func (r *repoLocal) IsValid() error {
 	f, err := os.Stat(r.path)

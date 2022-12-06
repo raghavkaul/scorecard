@@ -94,8 +94,10 @@ func TestCsvIterator(t *testing.T) {
 			filename: "testdata/failing_urls.csv",
 			outcomes: []outcome{
 				{
-					hasError:    true,
-					expectedErr: sce.ErrorUnsupportedHost,
+					hasError: false,
+					repo: RepoFormat{
+						Repo: "gitlab.com/owner1/repo1",
+					},
 				},
 				{
 					hasError:    true,

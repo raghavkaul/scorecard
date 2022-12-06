@@ -35,7 +35,7 @@ var _ = Describe("E2E TEST:"+checks.CheckTokenPermissions, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-dangerous-workflow-e2e")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 			req := checker.CheckRequest{
@@ -59,7 +59,7 @@ var _ = Describe("E2E TEST:"+checks.CheckTokenPermissions, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-dangerous-workflow-e2e")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, "8db326e9ba20517feeefd157524a89184ed41f7f", 0)
 			Expect(err).Should(BeNil())
 			req := checker.CheckRequest{

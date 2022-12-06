@@ -127,7 +127,7 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 
 // URI implements RepoClient.URI.
 func (client *Client) URI() string {
-	return fmt.Sprintf("github.com/%s/%s", client.repourl.owner, client.repourl.repo)
+	return fmt.Sprintf("%s/%s/%s", client.repourl.host, client.repourl.owner, client.repourl.repo)
 }
 
 // ListFiles implements RepoClient.ListFiles.
@@ -243,13 +243,30 @@ func (client *Client) Close() error {
 	return client.tarball.cleanup()
 }
 
+func IsGithubEnterpriseRepo(repo clients.Repo) bool {
+	return repo.Host() != "github.com"
+}
+
 // CreateGithubRepoClientWithTransport returns a Client which implements RepoClient interface.
-func CreateGithubRepoClientWithTransport(ctx context.Context, rt http.RoundTripper) clients.RepoClient {
+func CreateGithubRepoClientWithTransport(
+	ctx context.Context, rt http.RoundTripper, repo clients.Repo,
+) clients.RepoClient {
 	httpClient := &http.Client{
 		Transport: rt,
 	}
-	client := github.NewClient(httpClient)
-	graphClient := githubv4.NewClient(httpClient)
+
+	var client *github.Client
+	var graphClient *githubv4.Client
+
+	if IsGithubEnterpriseRepo(repo) {
+		//nolint:errcheck
+		// InitRepo will raise error anyway
+		client, _ = github.NewEnterpriseClient(repo.Host(), repo.Host(), httpClient)
+		graphClient = githubv4.NewEnterpriseClient(fmt.Sprintf("%s/graphql", repo.Host()), httpClient)
+	} else {
+		client = github.NewClient(httpClient)
+		graphClient = githubv4.NewClient(httpClient)
+	}
 
 	return &Client{
 		ctx:        ctx,
@@ -298,10 +315,10 @@ func CreateGithubRepoClientWithTransport(ctx context.Context, rt http.RoundTripp
 }
 
 // CreateGithubRepoClient returns a Client which implements RepoClient interface.
-func CreateGithubRepoClient(ctx context.Context, logger *log.Logger) clients.RepoClient {
+func CreateGithubRepoClient(ctx context.Context, logger *log.Logger, repo clients.Repo) clients.RepoClient {
 	// Use our custom roundtripper
 	rt := roundtripper.NewTransport(ctx, logger)
-	return CreateGithubRepoClientWithTransport(ctx, rt)
+	return CreateGithubRepoClientWithTransport(ctx, rt, repo)
 }
 
 // CreateOssFuzzRepoClient returns a RepoClient implementation
@@ -311,8 +328,7 @@ func CreateOssFuzzRepoClient(ctx context.Context, logger *log.Logger) (clients.R
 	if err != nil {
 		return nil, fmt.Errorf("error during MakeGithubRepo: %w", err)
 	}
-
-	ossFuzzRepoClient := CreateGithubRepoClient(ctx, logger)
+	ossFuzzRepoClient := CreateGithubRepoClient(ctx, logger, ossFuzzRepo)
 	if err := ossFuzzRepoClient.InitRepo(ossFuzzRepo, clients.HeadSHA, 0); err != nil {
 		return nil, fmt.Errorf("error during InitRepo: %w", err)
 	}

@@ -49,14 +49,14 @@ func TestRepoURL_IsValid(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "Non github repository",
+			name: "Github enterprise repository",
 			expected: repoURL{
-				host:  "gitlab.com",
-				owner: "foo",
-				repo:  "kubeflow",
+				host:  "github.mycorp.internal",
+				owner: "abc",
+				repo:  "def",
 			},
-			inputURL: "https://gitlab.com/foo/kubeflow",
-			wantErr:  true,
+			inputURL: "https://github.mycorp.internal/abc/def",
+			wantErr:  false,
 		},
 		{
 			name: "github repository",

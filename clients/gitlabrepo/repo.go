@@ -114,6 +114,10 @@ func (r *repoURL) Metadata() []string {
 	return r.metadata
 }
 
+func (r *repoURL) Host() string {
+	return r.hostname
+}
+
 // MakeGitlabRepo takes input of forms in parse and returns and implementation
 // of clients.Repo interface.
 func MakeGitlabRepo(input string) (clients.Repo, error) {

@@ -92,12 +92,6 @@ func (r *repoURL) Org() clients.Repo {
 
 // IsValid implements Repo.IsValid.
 func (r *repoURL) IsValid() error {
-	switch r.host {
-	case "github.com":
-	default:
-		return sce.WithMessage(sce.ErrorUnsupportedHost, r.host)
-	}
-
 	if strings.TrimSpace(r.owner) == "" || strings.TrimSpace(r.repo) == "" {
 		return sce.WithMessage(sce.ErrorInvalidURL,
 			fmt.Sprintf("%v. Expected the full repository url", r.URI()))
@@ -112,6 +106,10 @@ func (r *repoURL) AppendMetadata(metadata ...string) {
 // Metadata implements Repo.Metadata.
 func (r *repoURL) Metadata() []string {
 	return r.metadata
+}
+
+func (r *repoURL) Host() string {
+	return r.host
 }
 
 // MakeGithubRepo takes input of form "owner/repo" or "github.com/owner/repo"

@@ -37,7 +37,7 @@ var _ = Describe("E2E TEST:"+checks.CheckPinnedDependencies, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-pinned-dependencies-e2e")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 
@@ -62,7 +62,7 @@ var _ = Describe("E2E TEST:"+checks.CheckPinnedDependencies, func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("ossf-tests/scorecard-check-pinned-dependencies-e2e")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger, repo)
 			err = repoClient.InitRepo(repo, "c8bfd7cf04ea7af741e1d07af98fabfcc1b6ffb1", 0)
 			Expect(err).Should(BeNil())
 
