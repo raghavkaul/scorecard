@@ -23,6 +23,7 @@ import (
 	"github.com/grafeas/kritis/pkg/kritis/metadata/containeranalysis"
 	"github.com/grafeas/kritis/pkg/kritis/signer"
 	"github.com/grafeas/kritis/pkg/kritis/util"
+	"google.golang.org/api/option"
 
 	sclog "github.com/ossf/scorecard/v4/log"
 )
@@ -41,7 +42,9 @@ func runSign() error {
 	logger := sclog.NewLogger(sclog.DefaultLevel)
 
 	// Create a client
-	client, err := containeranalysis.New()
+	client, err := containeranalysis.New(
+		option.WithUserAgent("openssf-scorecard-attestor/0.1.0 grpc-go/1.50.1"),
+	)
 	if err != nil {
 		return fmt.Errorf("could not initialize the client %w", err)
 	}
