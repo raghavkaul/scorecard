@@ -201,10 +201,9 @@ jobs:
           command: |
             go env -w GOFLAGS=-mod=mod
             make build-scorecard
-  build-controller:
-    name: build-controller
+  scorecard-docker:
+    name: scorecard-docker
     runs-on: ubuntu-latest
-    needs: build-proto
     permissions:
       contents: read
     steps:
@@ -220,8 +219,13 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
      - name: Cache builds
        # https://github.com/mvdan/github-actions-golang#how-do-i-set-up-caching-between-builds
-       uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # v3.0.11
+       uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 #v3.0.11
        with:
+          # In order:
+          # * Module download cache
+          # * Build cache (Linux)
+          # * Build cache (Mac)
+          # * Build cache (Windows)
          path: |
            ~/go/pkg/mod
            ~/.cache/go-build
@@ -240,15 +244,8 @@ jobs:
          go-version: ${{ env.GO_VERSION }}
          check-latest: true
          cache: true
-     - name: build cron
-       uses: nick-invision/retry@3e91a01664abd3c5cd539100d10d33b9c5b68482
-       with:
-          max_attempts: 3
-          retry_on: error
-          timeout_minutes: 30
-          command: |
-            go env -w GOFLAGS=-mod=mod
-            make build-controller
+     - name: docker build
+       run: make scorecard-docker
   build-worker:
     name: build-worker
     runs-on: ubuntu-latest
