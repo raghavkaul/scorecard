@@ -307,6 +307,8 @@ checks:
       subverted a contributor's account), because a reviewer might detect the
       subversion.
 
+      THIS IS A TEST
+
       The check first tries to detect whether [Branch-Protection](checks.md#branch-protection) is enabled on the
       default branch with at least one required reviewer. If this fails, the check
       determines whether the most recent (~30) commits have a Github-approved review
