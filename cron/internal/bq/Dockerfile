@@ -23,6 +23,7 @@ COPY . ./
 FROM base AS transfer
 ARG TARGETOS
 ARG TARGETARCH
+# touch
 RUN CGO_ENABLED=0 make build-bq-transfer
 
 FROM gcr.io/distroless/base:nonroot@sha256:99133cb0878bb1f84d1753957c6fd4b84f006f2798535de22ebf7ba170bbf434
