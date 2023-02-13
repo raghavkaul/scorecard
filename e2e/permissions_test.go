@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ var _ = Describe("E2E TEST:"+checks.CheckTokenPermissions, func() {
 				Error:         nil,
 				Score:         checker.MinResultScore,
 				NumberOfWarn:  1,
-				NumberOfInfo:  2,
+				NumberOfInfo:  3,
 				NumberOfDebug: 5,
 			}
 			result := checks.TokenPermissions(&req)
@@ -73,7 +73,7 @@ var _ = Describe("E2E TEST:"+checks.CheckTokenPermissions, func() {
 				Error:         nil,
 				Score:         checker.MinResultScore,
 				NumberOfWarn:  1,
-				NumberOfInfo:  2,
+				NumberOfInfo:  3,
 				NumberOfDebug: 5,
 			}
 			result := checks.TokenPermissions(&req)
@@ -110,7 +110,7 @@ var _ = Describe("E2E TEST:"+checks.CheckTokenPermissions, func() {
 				Error:         nil,
 				Score:         checker.MinResultScore,
 				NumberOfWarn:  1,
-				NumberOfInfo:  2,
+				NumberOfInfo:  3,
 				NumberOfDebug: 5,
 			}
 			result := checks.TokenPermissions(&req)

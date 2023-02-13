@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ type Client struct {
 	searchCommits *searchCommitsHandler
 	webhook       *webhookHandler
 	languages     *languagesHandler
+	licenses      *licensesHandler
 	ctx           context.Context
 	tarball       tarballHandler
 	commitDepth   int
@@ -123,6 +124,9 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 	// Init languagesHandler
 	client.languages.init(client.repourl)
 
+	// Init languagesHandler
+	client.licenses.init(client.repourl)
+
 	// Init tarballHandler.
 	client.tarball.init(client.ctx, client.repourl, client.repo, commitSHA)
 
@@ -131,6 +135,10 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 
 func (client *Client) URI() string {
 	return fmt.Sprintf("%s/%s/%s", client.repourl.hostname, client.repourl.owner, client.repourl.projectID)
+}
+
+func (client *Client) LocalPath() (string, error) {
+	return "", nil
 }
 
 func (client *Client) ListFiles(predicate func(string) (bool, error)) ([]string, error) {
@@ -195,6 +203,11 @@ func (client *Client) ListStatuses(ref string) ([]clients.Status, error) {
 
 func (client *Client) ListProgrammingLanguages() ([]clients.Language, error) {
 	return client.languages.listProgrammingLanguages()
+}
+
+// ListLicenses implements RepoClient.ListLicenses.
+func (client *Client) ListLicenses() ([]clients.License, error) {
+	return client.licenses.listLicenses()
 }
 
 func (client *Client) Search(request clients.SearchRequest) (clients.SearchResponse, error) {

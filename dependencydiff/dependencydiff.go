@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -155,7 +155,7 @@ func getScorecardCheckResults(dCtx *dependencydiffContext) error {
 			// Run scorecard on those types of dependencies that the caller would like to check.
 			// If the input map changeTypesToCheck is empty, by default, we run the checks for all valid types.
 			// TODO (#2064): use the Scorecare REST API to retrieve the Scorecard result statelessly.
-			scorecardResult, err := pkg.RunScorecards(
+			scorecardResult, err := pkg.RunScorecard(
 				dCtx.ctx,
 				dCtx.ghRepo,
 				// TODO (#2065): In future versions, ideally, this should be

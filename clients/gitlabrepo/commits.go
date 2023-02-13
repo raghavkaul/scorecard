@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ func (handler *commitsHandler) init(repourl *repoURL) {
 	handler.once = new(sync.Once)
 }
 
-// nolint: gocognit, nestif
+// nolint: gocognit
 func (handler *commitsHandler) setup() error {
 	handler.once.Do(func() {
 		commits, _, err := handler.glClient.Commits.ListCommits(handler.repourl.projectID, &gitlab.ListCommitsOptions{})
@@ -52,6 +52,7 @@ func (handler *commitsHandler) setup() error {
 		userToEmail := make(map[string]*gitlab.User)
 		for _, commit := range commits {
 			user, ok := userToEmail[commit.AuthorEmail]
+			//nolint:nestif
 			if !ok {
 				users, _, err := handler.glClient.Search.Users(commit.CommitterName, &gitlab.SearchOptions{})
 				if err != nil {

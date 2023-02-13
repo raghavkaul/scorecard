@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,10 +24,12 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	"mvdan.cc/sh/v3/syntax"
 
 	"github.com/ossf/scorecard/v4/checker"
 	sce "github.com/ossf/scorecard/v4/errors"
+	"github.com/ossf/scorecard/v4/finding"
 )
 
 var (
@@ -329,7 +331,7 @@ func collectFetchPipeExecute(startLine, endLine uint, node syntax.Node, cmd, pat
 		checker.Dependency{
 			Location: &checker.File{
 				Path:      pathfn,
-				Type:      checker.FileTypeSource,
+				Type:      finding.FileTypeSource,
 				Offset:    startLine,
 				EndOffset: endLine,
 				Snippet:   cmd,
@@ -380,7 +382,7 @@ func collectExecuteFiles(startLine, endLine uint, node syntax.Node, cmd, pathfn 
 				checker.Dependency{
 					Location: &checker.File{
 						Path:      pathfn,
-						Type:      checker.FileTypeSource,
+						Type:      finding.FileTypeSource,
 						Offset:    startLine,
 						EndOffset: endLine,
 						Snippet:   cmd,
@@ -424,7 +426,6 @@ func isGoUnpinnedDownload(cmd []string) bool {
 	if !isBinaryName("go", cmd[0]) {
 		return false
 	}
-
 	// `Go install` will automatically look up the
 	// go.mod and go.sum, so we don't flag it.
 	if len(cmd) <= 2 {
@@ -432,11 +433,12 @@ func isGoUnpinnedDownload(cmd []string) bool {
 	}
 
 	found := false
+	insecure := false
 	hashRegex := regexp.MustCompile("^[A-Fa-f0-9]{40,}$")
+	semverRegex := regexp.MustCompile(`^v\d+\.\d+\.\d+(-[0-9A-Za-z-.]+)?(\+[0-9A-Za-z-.]+)?$`)
 	for i := 1; i < len(cmd)-1; i++ {
 		// Search for get and install commands.
-		if strings.EqualFold(cmd[i], "install") ||
-			strings.EqualFold(cmd[i], "get") {
+		if slices.Contains([]string{"get", "install"}, cmd[i]) {
 			found = true
 		}
 
@@ -444,6 +446,21 @@ func isGoUnpinnedDownload(cmd []string) bool {
 			continue
 		}
 
+		// Skip all flags
+		// TODO skip other build flags which might take arguments
+		for i < len(cmd)-1 && slices.Contains([]string{"-d", "-f", "-t", "-u", "-v", "-fix", "-insecure"}, cmd[i+1]) {
+			// Record the flag -insecure
+			if cmd[i+1] == "-insecure" {
+				insecure = true
+			}
+			i++
+		}
+
+		if i+1 >= len(cmd) {
+			// this is case go get -d -v
+			return false
+		}
+		// TODO check more than one package
 		pkg := cmd[i+1]
 		// Consider strings that are not URLs as local folders
 		// which are pinned.
@@ -457,8 +474,12 @@ func isGoUnpinnedDownload(cmd []string) bool {
 		if len(parts) != 2 {
 			continue
 		}
-		hash := parts[1]
-		if hashRegex.MatchString(hash) {
+		version := parts[1]
+		/*
+			"none" is special. It removes a dependency. Hashes are always okay. Full semantic versions are okay
+			as long as "-insecure" is not passed.
+		*/
+		if version == "none" || hashRegex.MatchString(version) || (!insecure && semverRegex.MatchString(version)) {
 			return false
 		}
 	}
@@ -632,7 +653,7 @@ func collectUnpinnedPakageManagerDownload(startLine, endLine uint, node syntax.N
 			checker.Dependency{
 				Location: &checker.File{
 					Path:      pathfn,
-					Type:      checker.FileTypeSource,
+					Type:      finding.FileTypeSource,
 					Offset:    startLine,
 					EndOffset: endLine,
 					Snippet:   cmd,
@@ -650,7 +671,7 @@ func collectUnpinnedPakageManagerDownload(startLine, endLine uint, node syntax.N
 			checker.Dependency{
 				Location: &checker.File{
 					Path:      pathfn,
-					Type:      checker.FileTypeSource,
+					Type:      finding.FileTypeSource,
 					Offset:    startLine,
 					EndOffset: endLine,
 					Snippet:   cmd,
@@ -668,7 +689,7 @@ func collectUnpinnedPakageManagerDownload(startLine, endLine uint, node syntax.N
 			checker.Dependency{
 				Location: &checker.File{
 					Path:      pathfn,
-					Type:      checker.FileTypeSource,
+					Type:      finding.FileTypeSource,
 					Offset:    startLine,
 					EndOffset: endLine,
 					Snippet:   cmd,
@@ -686,7 +707,7 @@ func collectUnpinnedPakageManagerDownload(startLine, endLine uint, node syntax.N
 			checker.Dependency{
 				Location: &checker.File{
 					Path:      pathfn,
-					Type:      checker.FileTypeSource,
+					Type:      finding.FileTypeSource,
 					Offset:    startLine,
 					EndOffset: endLine,
 					Snippet:   cmd,
@@ -781,7 +802,7 @@ func collectFetchProcSubsExecute(startLine, endLine uint, node syntax.Node, cmd,
 		checker.Dependency{
 			Location: &checker.File{
 				Path:      pathfn,
-				Type:      checker.FileTypeSource,
+				Type:      finding.FileTypeSource,
 				Offset:    startLine,
 				EndOffset: endLine,
 				Snippet:   cmd,

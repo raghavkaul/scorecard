@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ type Client struct {
 	searchCommits *searchCommitsHandler
 	webhook       *webhookHandler
 	languages     *languagesHandler
+	licenses      *licensesHandler
 	ctx           context.Context
 	tarball       tarballHandler
 	commitDepth   int
@@ -118,12 +119,20 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 
 	// Setup languagesHandler.
 	client.languages.init(client.ctx, client.repourl)
+
+	// Setup licensesHandler.
+	client.licenses.init(client.ctx, client.repourl)
 	return nil
 }
 
 // URI implements RepoClient.URI.
 func (client *Client) URI() string {
 	return fmt.Sprintf("github.com/%s/%s", client.repourl.owner, client.repourl.repo)
+}
+
+// LocalPath implements RepoClient.LocalPath.
+func (client *Client) LocalPath() (string, error) {
+	return client.tarball.getLocalPath()
 }
 
 // ListFiles implements RepoClient.ListFiles.
@@ -219,6 +228,11 @@ func (client *Client) ListProgrammingLanguages() ([]clients.Language, error) {
 	return client.languages.listProgrammingLanguages()
 }
 
+// ListLicenses implements RepoClient.ListLicenses.
+func (client *Client) ListLicenses() ([]clients.License, error) {
+	return client.licenses.listLicenses()
+}
+
 // Search implements RepoClient.Search.
 func (client *Client) Search(request clients.SearchRequest) (clients.SearchResponse, error) {
 	return client.search.search(request)
@@ -277,6 +291,9 @@ func CreateGithubRepoClientWithTransport(ctx context.Context, rt http.RoundTripp
 			ghClient: client,
 		},
 		languages: &languagesHandler{
+			ghclient: client,
+		},
+		licenses: &licensesHandler{
 			ghclient: client,
 		},
 		tarball: tarballHandler{

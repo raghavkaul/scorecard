@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -243,6 +243,21 @@ func (mr *MockRepoClientMockRecorder) ListIssues() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListIssues", reflect.TypeOf((*MockRepoClient)(nil).ListIssues))
 }
 
+// ListLicenses mocks base method.
+func (m *MockRepoClient) ListLicenses() ([]clients.License, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLicenses")
+	ret0, _ := ret[0].([]clients.License)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListLicenses indicates an expected call of ListLicenses.
+func (mr *MockRepoClientMockRecorder) ListLicenses() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLicenses", reflect.TypeOf((*MockRepoClient)(nil).ListLicenses))
+}
+
 // ListProgrammingLanguages mocks base method.
 func (m *MockRepoClient) ListProgrammingLanguages() ([]clients.Language, error) {
 	m.ctrl.T.Helper()
@@ -316,6 +331,21 @@ func (m *MockRepoClient) ListWebhooks() ([]clients.Webhook, error) {
 func (mr *MockRepoClientMockRecorder) ListWebhooks() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWebhooks", reflect.TypeOf((*MockRepoClient)(nil).ListWebhooks))
+}
+
+// LocalPath mocks base method.
+func (m *MockRepoClient) LocalPath() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LocalPath")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LocalPath indicates an expected call of LocalPath.
+func (mr *MockRepoClientMockRecorder) LocalPath() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LocalPath", reflect.TypeOf((*MockRepoClient)(nil).LocalPath))
 }
 
 // Search mocks base method.

@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,5 +104,38 @@ func TestValidateShellFile(t *testing.T) {
 	err = validateShellFile(filename, 0, 0, content, map[string]bool{}, &r)
 	if err == nil {
 		t.Errorf("failed to detect shell parsing error: %v", err)
+	}
+}
+
+func Test_isGoUnpinnedDownload(t *testing.T) {
+	type args struct {
+		cmd []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "go get",
+			args: args{
+				cmd: []string{"go", "get", "github.com/ossf/scorecard"},
+			},
+			want: true,
+		},
+		{
+			name: "go get with -d -v",
+			args: args{
+				cmd: []string{"go", "get", "-d", "-v"},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isGoUnpinnedDownload(tt.args.cmd); got != tt.want {
+				t.Errorf("isGoUnpinnedDownload() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/ossf/scorecard/v4/checker"
+	"github.com/ossf/scorecard/v4/finding"
 )
 
 const (
@@ -85,7 +86,7 @@ func prHasSuccessStatus(r checker.RevisionCIInfo, dl checker.DetailLogger) (bool
 		if isTest(status.Context) || isTest(status.TargetURL) {
 			dl.Debug(&checker.LogMessage{
 				Path: status.URL,
-				Type: checker.FileTypeURL,
+				Type: finding.FileTypeURL,
 				Text: fmt.Sprintf("CI test found: pr: %s, context: %s", r.HeadSHA,
 					status.Context),
 			})
@@ -109,7 +110,7 @@ func prHasSuccessfulCheck(r checker.RevisionCIInfo, dl checker.DetailLogger) (bo
 		if isTest(cr.App.Slug) {
 			dl.Debug(&checker.LogMessage{
 				Path: cr.URL,
-				Type: checker.FileTypeURL,
+				Type: finding.FileTypeURL,
 				Text: fmt.Sprintf("CI test found: pr: %d, context: %s", r.PullRequestNumber,
 					cr.App.Slug),
 			})

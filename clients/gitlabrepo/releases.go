@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,16 +70,16 @@ func releasesFrom(data []*gitlab.Release) []clients.Release {
 	for _, r := range data {
 		release := clients.Release{
 			TagName:         r.TagName,
-			TargetCommitish: r.Commit.ID,
-		}
-		if len(r.Assets.Links) > 0 {
-			release.URL = r.Assets.Links[0].DirectAssetURL
+			URL:             r.Assets.Links[0].DirectAssetURL,
+			TargetCommitish: r.CommitPath,
 		}
 		for _, a := range r.Assets.Sources {
 			release.Assets = append(release.Assets, clients.ReleaseAsset{
 				Name: a.Format,
-				URL:  a.URL,
 			})
+			if len(r.Assets.Links) > 0 {
+				release.URL = r.Assets.Links[0].DirectAssetURL
+			}
 		}
 		releases = append(releases, release)
 	}

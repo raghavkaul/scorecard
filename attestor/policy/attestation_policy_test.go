@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 	"github.com/ossf/scorecard/v4/checker"
 	"github.com/ossf/scorecard/v4/clients"
 	sce "github.com/ossf/scorecard/v4/errors"
-	scut "github.com/ossf/scorecard/v4/utests"
+	sclog "github.com/ossf/scorecard/v4/log"
 )
 
 func (ap *AttestationPolicy) ToJSON() string {
@@ -67,8 +67,8 @@ func TestCheckNoVulnerabilities(t *testing.T) {
 		tt := &tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			dl := scut.TestDetailLogger{}
-			actual, err := CheckNoVulnerabilities(tt.raw, &dl)
+			logger := sclog.NewLogger(sclog.DefaultLevel)
+			actual, err := CheckNoVulnerabilities(tt.raw, logger)
 
 			if !errors.Is(err, tt.err) {
 				t.Fatalf("%s: expected %v, got %v", tt.name, tt.err, err)
@@ -149,8 +149,8 @@ func TestCheckPreventBinaryArtifacts(t *testing.T) {
 		tt := &tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			dl := scut.TestDetailLogger{}
-			actual, err := CheckPreventBinaryArtifacts(tt.allowedBinaryArtifacts, tt.raw, &dl)
+			logger := sclog.NewLogger(sclog.DefaultLevel)
+			actual, err := CheckPreventBinaryArtifacts(tt.allowedBinaryArtifacts, tt.raw, logger)
 
 			if !errors.Is(err, tt.err) {
 				t.Fatalf("%s: expected %v, got %v", tt.name, tt.err, err)
@@ -222,7 +222,7 @@ func TestCheckCodeReviewed(t *testing.T) {
 			name: "no approvals from the right users",
 			reqs: CodeReviewRequirements{
 				MinReviewers:      2,
-				RequiredApprovers: []string{"bob"},
+				RequiredApprovers: []string{"bob", "bob-2"},
 			},
 			raw: &checker.RawResults{
 				CodeReviewResults: checker.CodeReviewData{
@@ -244,6 +244,46 @@ func TestCheckCodeReviewed(t *testing.T) {
 				},
 			},
 			expected: Fail,
+		},
+		{
+			name: "approvals from one of the required approvers",
+			reqs: CodeReviewRequirements{
+				MinReviewers:      2,
+				RequiredApprovers: []string{"bob", "alice"},
+			},
+			raw: &checker.RawResults{
+				CodeReviewResults: checker.CodeReviewData{
+					DefaultBranchChangesets: []checker.Changeset{
+						{
+							RevisionID: "1",
+							Commits: []clients.Commit{{
+								SHA: "a",
+								AssociatedMergeRequest: clients.PullRequest{
+									Reviews: []clients.Review{
+										{Author: &clients.User{Login: "alice"}, State: "APPROVED"},
+										{Author: &clients.User{Login: "alice-2"}, State: "APPROVED"},
+										{Author: &clients.User{Login: "bob"}, State: "NEEDS_CHANGES"},
+									},
+								},
+							}},
+						},
+						{
+							RevisionID: "1",
+							Commits: []clients.Commit{{
+								SHA: "a",
+								AssociatedMergeRequest: clients.PullRequest{
+									Reviews: []clients.Review{
+										{Author: &clients.User{Login: "alice"}, State: "NEEDS_CHANGES"},
+										{Author: &clients.User{Login: "alice-2"}, State: "APPROVED"},
+										{Author: &clients.User{Login: "bob"}, State: "APPROVED"},
+									},
+								},
+							}},
+						},
+					},
+				},
+			},
+			expected: Pass,
 		},
 		{
 			name: "some changesets not reviewed",
@@ -324,8 +364,8 @@ func TestCheckCodeReviewed(t *testing.T) {
 		tt := &tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			dl := scut.TestDetailLogger{}
-			actual, err := CheckCodeReviewed(tt.reqs, tt.raw, &dl)
+			logger := sclog.NewLogger(sclog.DefaultLevel)
+			actual, err := CheckCodeReviewed(tt.reqs, tt.raw, logger)
 
 			if !errors.Is(err, tt.err) {
 				t.Fatalf("%s: expected %v, got %v", tt.name, tt.err, err)
@@ -410,8 +450,8 @@ func TestNoUnpinnedDependencies(t *testing.T) {
 		tt := &tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			dl := scut.TestDetailLogger{}
-			actual, err := CheckNoUnpinnedDependencies(tt.ignores, tt.raw, &dl)
+			logger := sclog.NewLogger(sclog.DefaultLevel)
+			actual, err := CheckNoUnpinnedDependencies(tt.ignores, tt.raw, logger)
 
 			if !errors.Is(err, tt.err) {
 				t.Fatalf("%s: expected %v, got %v", tt.name, tt.err, err)

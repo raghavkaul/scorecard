@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,7 +75,8 @@ type graphqlData struct {
 									}
 								}
 								Author struct {
-									Login githubv4.String
+									Login        githubv4.String
+									ResourcePath githubv4.String
 								}
 								Number     githubv4.Int
 								HeadRefOid githubv4.String
@@ -201,6 +202,8 @@ func (handler *graphqlHandler) init(ctx context.Context, repourl *repoURL, commi
 	handler.checkRuns = checkRunCache{}
 	handler.logger = log.NewLogger(log.DefaultLevel)
 	handler.commitDepth = commitDepth
+	handler.commits = nil
+	handler.issues = nil
 }
 
 func populateCommits(handler *graphqlHandler, vars map[string]interface{}) ([]clients.Commit, error) {
@@ -394,12 +397,16 @@ func commitsFrom(data *graphqlData, repoOwner, repoName string) ([]clients.Commi
 				string(pr.Repository.Name) != repoName {
 				continue
 			}
+			// ResourcePath: e.g., for dependabot, "/apps/dependabot", or "/apps/renovate"
+			// Path that can be appended to "https://github.com" for a Github resource
+			openedByBot := strings.HasPrefix(string(pr.Author.ResourcePath), "/apps/")
 			associatedPR = clients.PullRequest{
 				Number:   int(pr.Number),
 				HeadSHA:  string(pr.HeadRefOid),
 				MergedAt: pr.MergedAt.Time,
 				Author: clients.User{
 					Login: string(pr.Author.Login),
+					IsBot: openedByBot,
 				},
 				MergedBy: clients.User{
 					Login: string(pr.MergedBy.Login),

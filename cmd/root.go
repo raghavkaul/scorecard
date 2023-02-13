@@ -1,4 +1,4 @@
-// Copyright 2020 Security Scorecard Authors
+// Copyright 2020 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,10 +36,10 @@ import (
 )
 
 const (
-	scorecardLong = "A program that shows security scorecard for an open source software."
+	scorecardLong = "A program that shows the OpenSSF scorecard for an open source software."
 	scorecardUse  = `./scorecard (--repo=<repo> | --local=<folder> | --{npm,pypi,rubygems}=<package_name>)
 	 [--checks=check1,...] [--show-details]`
-	scorecardShort = "Security Scorecards"
+	scorecardShort = "OpenSSF Scorecard"
 )
 
 // New creates a new instance of the scorecard command.
@@ -124,7 +124,7 @@ func rootCmd(o *options.Options) error {
 		}
 	}
 
-	repoResult, err := pkg.RunScorecards(
+	repoResult, err := pkg.RunScorecard(
 		ctx,
 		repoURI,
 		o.Commit,
@@ -136,8 +136,9 @@ func rootCmd(o *options.Options) error {
 		vulnsClient,
 	)
 	if err != nil {
-		return fmt.Errorf("RunScorecards: %w", err)
+		return fmt.Errorf("RunScorecard: %w", err)
 	}
+
 	repoResult.Metadata = append(repoResult.Metadata, o.Metadata...)
 
 	// Sort them by name

@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -142,6 +142,15 @@ func applyPredicate(
 	return files, nil
 }
 
+// LocalPath implements RepoClient.LocalPath.
+func (client *localDirClient) LocalPath() (string, error) {
+	clientPath, err := filepath.Abs(client.path)
+	if err != nil {
+		return "", fmt.Errorf("error during filepath.Abs: %w", err)
+	}
+	return clientPath, nil
+}
+
 // ListFiles implements RepoClient.ListFiles.
 func (client *localDirClient) ListFiles(predicate func(string) (bool, error)) ([]string, error) {
 	client.once.Do(func() {
@@ -238,6 +247,12 @@ func (client *localDirClient) Close() error {
 // TODO: add ListProgrammingLanguages support for local directories.
 func (client *localDirClient) ListProgrammingLanguages() ([]clients.Language, error) {
 	return nil, fmt.Errorf("ListProgrammingLanguages: %w", clients.ErrUnsupportedFeature)
+}
+
+// ListLicenses implements RepoClient.ListLicenses.
+// TODO: add ListLicenses support for local directories.
+func (client *localDirClient) ListLicenses() ([]clients.License, error) {
+	return nil, fmt.Errorf("ListLicenses: %w", clients.ErrUnsupportedFeature)
 }
 
 func (client *localDirClient) GetCreatedAt() (time.Time, error) {

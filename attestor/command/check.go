@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ossf/scorecard-attestor/policy"
+	"github.com/ossf/scorecard/v4/attestor/policy"
 	"github.com/ossf/scorecard/v4/checker"
 	"github.com/ossf/scorecard/v4/checks"
 	sclog "github.com/ossf/scorecard/v4/log"
@@ -35,6 +35,11 @@ func (ep EmptyParameterError) Error() string {
 }
 
 func runCheck() (policy.PolicyResult, error) {
+	return RunCheckWithParams(repoURL, commitSHA, policyPath)
+}
+
+// RunCheckWithParams: Run scorecard check on repo. Export for testability.
+func RunCheckWithParams(repoURL, commitSHA, policyPath string) (policy.PolicyResult, error) {
 	ctx := context.Background()
 	logger := sclog.NewLogger(sclog.DefaultLevel)
 
@@ -81,8 +86,17 @@ func runCheck() (policy.PolicyResult, error) {
 	requiredChecks := attestationPolicy.GetRequiredChecksForPolicy()
 
 	enabledChecks := map[string]checker.Check{
-		"BinaryArtifacts": {
+		checks.CheckBinaryArtifacts: {
 			Fn: checks.BinaryArtifacts,
+		},
+		checks.CheckVulnerabilities: {
+			Fn: checks.Vulnerabilities,
+		},
+		checks.CheckCodeReview: {
+			Fn: checks.CodeReview,
+		},
+		checks.CheckPinnedDependencies: {
+			Fn: checks.PinningDependencies,
 		},
 	}
 
@@ -93,7 +107,7 @@ func runCheck() (policy.PolicyResult, error) {
 		}
 	}
 
-	repoResult, err := pkg.RunScorecards(
+	repoResult, err := pkg.RunScorecard(
 		ctx,
 		repo,
 		commitSHA,
@@ -105,7 +119,7 @@ func runCheck() (policy.PolicyResult, error) {
 		vulnsClient,
 	)
 	if err != nil {
-		return policy.Fail, fmt.Errorf("RunScorecards: %w", err)
+		return policy.Fail, fmt.Errorf("RunScorecard: %w", err)
 	}
 
 	result, err := attestationPolicy.EvaluateResults(&repoResult.RawResults)

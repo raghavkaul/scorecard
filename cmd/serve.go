@@ -1,4 +1,4 @@
-// Copyright 2020 Security Scorecard Authors
+// Copyright 2020 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ func serveCmd(o *options.Options) *cobra.Command {
 				defer ossFuzzRepoClient.Close()
 				ciiClient := clients.DefaultCIIBestPracticesClient()
 				checksToRun := checks.GetAll()
-				repoResult, err := pkg.RunScorecards(
+				repoResult, err := pkg.RunScorecard(
 					ctx, repo, clients.HeadSHA /*commitSHA*/, o.CommitDepth, checksToRun, repoClient,
 					ossFuzzRepoClient, ciiClient, vulnsClient)
 				if err != nil {

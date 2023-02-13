@@ -1,4 +1,4 @@
-// Copyright 2022 Security Scorecard Authors
+// Copyright 2022 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -83,6 +83,7 @@ func (handler *contributorsHandler) setup() error {
 				Companies:        []string{users[0].Organization},
 				NumContributions: contrib.Commits,
 				ID:               int64(users[0].ID),
+				IsBot:            users[0].Bot,
 			}
 			handler.contributors = append(handler.contributors, contributor)
 		}

@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 				Error:         nil,
 				Score:         checker.MaxResultScore,
 				NumberOfWarn:  0,
-				NumberOfInfo:  1,
+				NumberOfInfo:  2,
 				NumberOfDebug: 0,
 			}
 			result := checks.License(&req)
@@ -74,7 +74,7 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 				Error:         nil,
 				Score:         checker.MaxResultScore,
 				NumberOfWarn:  0,
-				NumberOfInfo:  1,
+				NumberOfInfo:  2,
 				NumberOfDebug: 0,
 			}
 			result := checks.License(&req)
@@ -109,8 +109,8 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 			}
 			expected := scut.TestReturn{
 				Error:         nil,
-				Score:         checker.MaxResultScore,
-				NumberOfWarn:  0,
+				Score:         checker.MaxResultScore - 1,
+				NumberOfWarn:  1,
 				NumberOfInfo:  1,
 				NumberOfDebug: 0,
 			}

@@ -1,4 +1,4 @@
-// Copyright 2020 Security Scorecard Authors
+// Copyright 2020 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -363,7 +363,8 @@ func Test_getProminentLanguages(t *testing.T) {
 				{
 					Name:     clients.Python,
 					NumLines: 40,
-				}, {
+				},
+				{
 					Name:     clients.JavaScript,
 					NumLines: 800,
 				},
@@ -384,7 +385,8 @@ func Test_getProminentLanguages(t *testing.T) {
 				{
 					Name:     clients.Python,
 					NumLines: 40,
-				}, {
+				},
+				{
 					Name:     clients.JavaScript,
 					NumLines: 800,
 				},
@@ -395,7 +397,8 @@ func Test_getProminentLanguages(t *testing.T) {
 				{
 					Name:     clients.Python,
 					NumLines: 40,
-				}, {
+				},
+				{
 					Name:     clients.JavaScript,
 					NumLines: 800,
 				},
@@ -406,7 +409,8 @@ func Test_getProminentLanguages(t *testing.T) {
 				{
 					Name:     clients.Python,
 					NumLines: 40,
-				}, {
+				},
+				{
 					Name:     clients.JavaScript,
 					NumLines: 800,
 				},

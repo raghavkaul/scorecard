@@ -1,4 +1,4 @@
-// Copyright 2021 Security Scorecard Authors
+// Copyright 2021 OpenSSF Scorecard Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -164,14 +164,14 @@ func processRequest(ctx context.Context,
 			delete(checksToRun, check)
 		}
 
-		result, err := pkg.RunScorecards(ctx, repo, commitSHA, 0, checksToRun,
+		result, err := pkg.RunScorecard(ctx, repo, commitSHA, 0, checksToRun,
 			repoClient, ossFuzzRepoClient, ciiClient, vulnsClient)
 		if errors.Is(err, sce.ErrRepoUnreachable) {
 			// Not accessible repo - continue.
 			continue
 		}
 		if err != nil {
-			return fmt.Errorf("error during RunScorecards: %w", err)
+			return fmt.Errorf("error during RunScorecard: %w", err)
 		}
 		for checkIndex := range result.Checks {
 			check := &result.Checks[checkIndex]
