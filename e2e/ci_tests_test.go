@@ -105,8 +105,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCITests, func() {
 		})
 		It("Should return use of CI tests - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			// Project url is gitlab.com/gitlab-org/gitlab
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/278964")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -130,21 +129,21 @@ var _ = Describe("E2E TEST:"+checks.CheckCITests, func() {
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 15,
+				NumberOfDebug: 14,
 			}
 			expected3 := scut.TestReturn{
 				Error:         nil,
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 16,
+				NumberOfDebug: 14,
 			}
 			expected4 := scut.TestReturn{
 				Error:         nil,
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 17,
+				NumberOfDebug: 14,
 			}
 			result := checks.CITests(&req)
 			res1 := scut.ValidateTestReturn(nil, "CI tests run", &expected, &result, &dl)
@@ -156,8 +155,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCITests, func() {
 		})
 		It("Should return use of CI tests at commit - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			// Project url is gitlab.com/gitlab-org/gitlab
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/278964")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -182,21 +180,21 @@ var _ = Describe("E2E TEST:"+checks.CheckCITests, func() {
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 15,
+				NumberOfDebug: 14,
 			}
 			expected3 := scut.TestReturn{
 				Error:         nil,
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 16,
+				NumberOfDebug: 14,
 			}
 			expected4 := scut.TestReturn{
 				Error:         nil,
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 17,
+				NumberOfDebug: 14,
 			}
 			result := checks.CITests(&req)
 			res1 := scut.ValidateTestReturn(nil, "CI tests run", &expected, &result, &dl)

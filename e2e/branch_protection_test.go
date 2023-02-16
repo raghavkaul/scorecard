@@ -121,8 +121,7 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			skipIfTokenIsNot(patTokenType, "GitLab pac only")
 
 			dl := scut.TestDetailLogger{}
-			// Project url is gitlab.com/N8BWert/scorecard-check-branch-protection-e2e
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/39537550")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-branch-protection-e2e")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -153,8 +152,7 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			skipIfTokenIsNot(patTokenType, "GitLab pac only")
 
 			dl := scut.TestDetailLogger{}
-			// Project url is gitlab.com/N8BWert/scorecard-check-branch-protection-e2e-none
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/39537551")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-branch-protection-e2e-none")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -183,8 +181,7 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			skipIfTokenIsNot(patTokenType, "GitLab pac only")
 
 			dl := scut.TestDetailLogger{}
-			// Project url is gitlab.com/N8BWert/scorecard-check-branch-protection-e2e-patch-1
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/39537557")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-branch-protection-e2e-patch-1")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())

@@ -113,7 +113,7 @@ func (handler *tarballHandler) setup() error {
 
 func (handler *tarballHandler) getTarball() error {
 	url := fmt.Sprintf("%s/api/v4/projects/%d/repository/archive.tar.gz?sha=%s",
-		handler.repourl.hostname, handler.repo.ID, handler.commitSHA)
+		handler.repourl.Host(), handler.repo.ID, handler.commitSHA)
 	req, err := http.NewRequestWithContext(handler.ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("http.NewRequestWithContext: %w", err)

@@ -60,7 +60,7 @@ var _ = Describe("E2E TEST:"+checks.CheckSignedReleases, func() {
 		It("Should return valid signed releases - GitLab", func() {
 			dl := scut.TestDetailLogger{}
 			// project url is gitlab.com/gitlab-org/gitlab
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/278964")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())

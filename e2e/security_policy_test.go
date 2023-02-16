@@ -176,7 +176,7 @@ var _ = Describe("E2E TEST:"+checks.CheckSecurityPolicy, func() {
 		It("Should return valid security policy - GitLab", func() {
 			dl := scut.TestDetailLogger{}
 			// project url is gitlab.com/bramw/baserow.
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/bramw/10858056")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/bramw/baserow")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -205,7 +205,7 @@ var _ = Describe("E2E TEST:"+checks.CheckSecurityPolicy, func() {
 		It("Should return valid security policy at commitSHA - GitLab", func() {
 			dl := scut.TestDetailLogger{}
 			// project url is gitlab.com/bramw/baserow.
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/bramw/10858056")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/bramw/baserow")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())

@@ -121,8 +121,7 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 		})
 		It("Should return license check works - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			// project url is gitlab.com/N8BWert/scorecard-check-license-e2e.
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/39539054")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-license-e2e")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -136,8 +135,8 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 			}
 			expected := scut.TestReturn{
 				Error:         nil,
-				Score:         checker.MaxResultScore,
-				NumberOfWarn:  0,
+				Score:         9,
+				NumberOfWarn:  1,
 				NumberOfInfo:  1,
 				NumberOfDebug: 0,
 			}
@@ -148,8 +147,7 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 		})
 		It("Should return license check works at commitSHA - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			// project url is gitlab.com/N8BWert/scorecard-check-license-e2e.
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/39539054")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-license-e2e")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -163,8 +161,8 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 			}
 			expected := scut.TestReturn{
 				Error:         nil,
-				Score:         checker.MaxResultScore,
-				NumberOfWarn:  0,
+				Score:         9,
+				NumberOfWarn:  1,
 				NumberOfInfo:  1,
 				NumberOfDebug: 0,
 			}

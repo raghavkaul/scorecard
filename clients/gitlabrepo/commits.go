@@ -16,7 +16,6 @@ package gitlabrepo
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/xanzy/go-gitlab"
@@ -38,49 +37,23 @@ func (handler *commitsHandler) init(repourl *repoURL) {
 	handler.once = new(sync.Once)
 }
 
-// nolint: gocognit
+//nolint:gocognit
 func (handler *commitsHandler) setup() error {
 	handler.once.Do(func() {
-		commits, _, err := handler.glClient.Commits.ListCommits(handler.repourl.projectID, &gitlab.ListCommitsOptions{})
+		commits, _, err := handler.glClient.Commits.ListCommits(handler.repourl.project, &gitlab.ListCommitsOptions{})
 		if err != nil {
 			handler.errSetup = fmt.Errorf("request for commits failed with %w", err)
 			return
 		}
 
-		// To limit the number of user requests we are going to map every committer email
-		// to a user.
-		userToEmail := make(map[string]*gitlab.User)
 		for _, commit := range commits {
-			user, ok := userToEmail[commit.AuthorEmail]
-			//nolint:nestif
-			if !ok {
-				users, _, err := handler.glClient.Search.Users(commit.CommitterName, &gitlab.SearchOptions{})
-				if err != nil {
-					// Possibility this shouldn't be an issue as individuals can leave organizations
-					// (possibly taking their account with them)
-					handler.errSetup = fmt.Errorf("unable to find user associated with commit: %w", err)
-					return
-				}
-
-				// For some reason some users have unknown names, so below we are going to parse their email into pieces.
-				// i.e. (firstname.lastname@domain.com) -> "firstname lastname".
-				if len(users) == 0 {
-					users, _, err = handler.glClient.Search.Users(parseEmailToName(commit.CommitterEmail), &gitlab.SearchOptions{})
-					if err != nil {
-						handler.errSetup = fmt.Errorf("unable to find user associated with commit: %w", err)
-						return
-					}
-				}
-				if len(users) != 0 {
-					userToEmail[commit.AuthorEmail] = users[0]
-					user = users[0]
-				}
-			}
+			var err error
 
 			// Commits are able to be a part of multiple merge requests, but the only one that will be important
 			// here is the earliest one.
-			mergeRequests, _, err := handler.glClient.Commits.ListMergeRequestsByCommit(handler.repourl.projectID, commit.ID)
+			mergeRequests, _, err := handler.glClient.Commits.ListMergeRequestsByCommit(handler.repourl.project, commit.ID)
 			if err != nil {
+				fmt.Println("reached: commit: "+commit.ID+" err: %w\n", err)
 				handler.errSetup = fmt.Errorf("unable to find merge requests associated with commit: %w", err)
 				return
 			}
@@ -95,13 +68,6 @@ func (handler *commitsHandler) setup() error {
 						mergeRequest = mergeRequests[i]
 					}
 				}
-			} else {
-				handler.commits = append(handler.commits, clients.Commit{
-					CommittedDate: *commit.CommittedDate,
-					Message:       commit.Message,
-					SHA:           commit.ID,
-				})
-				continue
 			}
 
 			if mergeRequest == nil || mergeRequest.MergedAt == nil {
@@ -110,6 +76,7 @@ func (handler *commitsHandler) setup() error {
 					Message:       commit.Message,
 					SHA:           commit.ID,
 				})
+				continue
 			}
 
 			// Casting the Reviewers into clients.Review.
@@ -144,7 +111,6 @@ func (handler *commitsHandler) setup() error {
 						Reviews:  reviews,
 						MergedBy: clients.User{ID: int64(mergeRequest.MergedBy.ID)},
 					},
-					Committer: clients.User{ID: int64(user.ID)},
 				})
 		}
 	})
@@ -158,12 +124,4 @@ func (handler *commitsHandler) listCommits() ([]clients.Commit, error) {
 	}
 
 	return handler.commits, nil
-}
-
-// Expected email form: <firstname>.<lastname>@<namespace>.com.
-func parseEmailToName(email string) string {
-	s := strings.Split(email, ".")
-	firstName := s[0]
-	lastName := strings.Split(s[1], "@")[0]
-	return firstName + " " + lastName
 }

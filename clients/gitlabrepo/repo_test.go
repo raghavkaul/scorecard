@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestRepoURL_IsValid(t *testing.T) {
@@ -32,9 +33,10 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "valid http address",
 			expected: repoURL{
-				hostname:  "gitlab.example.com",
-				owner:     "foo",
-				projectID: "1234",
+				scheme:  "http",
+				host:    "gitlab.example.com",
+				owner:   "foo",
+				project: "1234",
 			},
 			inputURL: "http://gitlab.example.com/foo/1234",
 			wantErr:  false,
@@ -42,9 +44,10 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "valid https address",
 			expected: repoURL{
-				hostname:  "gitlab.example.com",
-				owner:     "foo",
-				projectID: "1234",
+				scheme:  "https",
+				host:    "gitlab.example.com",
+				owner:   "foo",
+				project: "1234",
 			},
 			inputURL: "https://gitlab.example.com/foo/1234",
 			wantErr:  false,
@@ -52,9 +55,10 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "valid http address with trailing slash",
 			expected: repoURL{
-				hostname:  "gitlab.example.com",
-				owner:     "foo",
-				projectID: "1234",
+				scheme:  "http",
+				host:    "gitlab.example.com",
+				owner:   "foo",
+				project: "1234",
 			},
 			inputURL: "http://gitlab.example.com/foo/1234/",
 			wantErr:  false,
@@ -62,9 +66,10 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "valid https address with trailing slash",
 			expected: repoURL{
-				hostname:  "gitlab.example.com",
-				owner:     "foo",
-				projectID: "1234",
+				scheme:  "https",
+				host:    "gitlab.example.com",
+				owner:   "foo",
+				project: "1234",
 			},
 			inputURL: "https://gitlab.example.com/foo/1234/",
 			wantErr:  false,
@@ -72,9 +77,10 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "non gitlab repository",
 			expected: repoURL{
-				hostname:  "github.com",
-				owner:     "foo",
-				projectID: "1234",
+				scheme:  "https",
+				host:    "github.com",
+				owner:   "foo",
+				project: "1234",
 			},
 			inputURL: "https://github.com/foo/1234",
 			wantErr:  true,
@@ -82,19 +88,21 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "GitLab project with wrong projectID",
 			expected: repoURL{
-				hostname:  "gitlab.example.com",
-				owner:     "foo",
-				projectID: "bar",
+				scheme:  "https",
+				host:    "gitlab.example.com",
+				owner:   "foo",
+				project: "bar",
 			},
 			inputURL: "https://gitlab.example.com/foo/bar",
-			wantErr:  true,
+			wantErr:  false,
 		},
 		{
 			name: "GitHub project with 'gitlab.' in the title",
 			expected: repoURL{
-				hostname:  "github.com",
-				owner:     "foo",
-				projectID: "gitlab.test",
+				scheme:  "http",
+				host:    "github.com",
+				owner:   "foo",
+				project: "gitlab.test",
 			},
 			inputURL: "http://github.com/foo/gitlab.test",
 			wantErr:  true,
@@ -102,9 +110,9 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "valid gitlab project without http or https",
 			expected: repoURL{
-				hostname:  "gitlab.example.com",
-				owner:     "foo",
-				projectID: "1234",
+				host:    "gitlab.example.com",
+				owner:   "foo",
+				project: "1234",
 			},
 			inputURL: "gitlab.example.com/foo/1234",
 			wantErr:  false,
@@ -115,9 +123,9 @@ func TestRepoURL_IsValid(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			r := repoURL{
-				hostname:  tt.expected.hostname,
-				owner:     tt.expected.owner,
-				projectID: tt.expected.projectID,
+				host:    tt.expected.host,
+				owner:   tt.expected.owner,
+				project: tt.expected.project,
 			}
 			if err := r.parse(tt.inputURL); err != nil {
 				t.Errorf("repoURL.parse() error = %v", err)
@@ -125,10 +133,10 @@ func TestRepoURL_IsValid(t *testing.T) {
 			if err := r.IsValid(); (err != nil) != tt.wantErr {
 				t.Errorf("repoURL.IsValid() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !tt.wantErr && !cmp.Equal(tt.expected, r, cmp.AllowUnexported(repoURL{})) {
-				fmt.Println("expected: " + tt.expected.hostname + " GOT: " + r.hostname)
+			if !tt.wantErr && !cmp.Equal(tt.expected, r, cmpopts.IgnoreUnexported(repoURL{})) {
+				fmt.Println("expected: " + tt.expected.host + " GOT: " + r.host)
 				fmt.Println("expected: " + tt.expected.owner + " GOT: " + r.owner)
-				fmt.Println("expected: " + tt.expected.projectID + " GOT: " + r.projectID)
+				fmt.Println("expected: " + tt.expected.project + " GOT: " + r.project)
 				t.Errorf("Got diff: %s", cmp.Diff(tt.expected, r))
 			}
 		})

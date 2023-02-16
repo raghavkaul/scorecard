@@ -64,9 +64,10 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 	}
 
 	// Sanity check.
-	repo, _, err := client.glClient.Projects.GetProject(glRepo.projectID, &gitlab.GetProjectOptions{})
+	proj := fmt.Sprintf("%s/%s", glRepo.owner, glRepo.project)
+	repo, _, err := client.glClient.Projects.GetProject(proj, &gitlab.GetProjectOptions{})
 	if err != nil {
-		return sce.WithMessage(sce.ErrRepoUnreachable, err.Error())
+		return sce.WithMessage(sce.ErrRepoUnreachable, proj+"\t"+err.Error())
 	}
 	if commitDepth <= 0 {
 		client.commitDepth = 30 // default
@@ -75,8 +76,9 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 	}
 	client.repo = repo
 	client.repourl = &repoURL{
-		hostname:      inputRepo.URI(),
-		projectID:     fmt.Sprint(repo.ID),
+		scheme:        glRepo.scheme,
+		host:          glRepo.host,
+		project:       fmt.Sprint(repo.ID),
 		defaultBranch: repo.DefaultBranch,
 		commitSHA:     commitSHA,
 	}
@@ -125,7 +127,7 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 	client.languages.init(client.repourl)
 
 	// Init languagesHandler
-	client.licenses.init(client.repourl)
+	client.licenses.init(repo, client.repourl)
 
 	// Init tarballHandler.
 	client.tarball.init(client.ctx, client.repourl, client.repo, commitSHA)
@@ -134,7 +136,7 @@ func (client *Client) InitRepo(inputRepo clients.Repo, commitSHA string, commitD
 }
 
 func (client *Client) URI() string {
-	return fmt.Sprintf("%s/%s/%s", client.repourl.hostname, client.repourl.owner, client.repourl.projectID)
+	return fmt.Sprintf("%s/%s/%s", client.repourl.host, client.repourl.owner, client.repourl.project)
 }
 
 func (client *Client) LocalPath() (string, error) {
@@ -223,7 +225,7 @@ func (client *Client) Close() error {
 }
 
 func CreateGitlabClientWithToken(ctx context.Context, token string, repo clients.Repo) (clients.RepoClient, error) {
-	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(repo.URI()))
+	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(repo.Host()))
 	if err != nil {
 		return nil, fmt.Errorf("could not create gitlab client with error: %w", err)
 	}
@@ -270,6 +272,7 @@ func CreateGitlabClientWithToken(ctx context.Context, token string, repo clients
 		languages: &languagesHandler{
 			glClient: client,
 		},
+		licenses: &licensesHandler{},
 	}, nil
 }
 

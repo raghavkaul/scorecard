@@ -116,7 +116,7 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 		})
 		It("Should return that there are vulnerabilities - GitLab", func() {
 			// project url is gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541.
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/39539557")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -134,7 +134,7 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 			expected := scut.TestReturn{
 				Error:         nil,
 				Score:         checker.MaxResultScore - 3, // 3 vulnerabilities remove 3 points.
-				NumberOfWarn:  1,
+				NumberOfWarn:  3,
 				NumberOfInfo:  0,
 				NumberOfDebug: 0,
 			}
@@ -145,7 +145,7 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 		})
 		It("Should return that there are vulnerabilities at commit - GitLab", func() {
 			// project url is gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541.
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/39539557")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
