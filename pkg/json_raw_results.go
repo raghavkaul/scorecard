@@ -120,9 +120,8 @@ type jsonDefaultBranchChangeset struct {
 }
 
 type jsonCommit struct {
-	Message   string   `json:"message"`
-	SHA       string   `json:"sha"`
-	Committer jsonUser `json:"committer"`
+	Message string `json:"message"`
+	SHA     string `json:"sha"`
 
 	// TODO: check runs, etc.
 }
@@ -275,7 +274,7 @@ type jsonRawResults struct {
 	// Contributors. Note: we could use the list of commits instead to store this data.
 	// However, it's harder to get statistics using commit list, so we have a dedicated
 	// structure for it.
-	Contributors jsonContributors `json:"Contributors"`
+	Contributors jsonContributors `json:"contributors"`
 	// Commits.
 	DefaultBranchChangesets []jsonDefaultBranchChangeset `json:"defaultBranchChangesets"`
 	// Archived status of the repo.
@@ -546,9 +545,6 @@ func (r *jsonScorecardRawResult) setDefaultCommitData(changesets []checker.Chang
 		for j := range cs.Commits {
 			commit := cs.Commits[j]
 			commits = append(commits, jsonCommit{
-				Committer: jsonUser{
-					Login: commit.Committer.Login,
-				},
 				Message: commit.Message,
 				SHA:     commit.SHA,
 			})

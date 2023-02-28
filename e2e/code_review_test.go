@@ -109,7 +109,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 		// the transfer from github so this returns a different value than the above GitHub test.
 		It("Should return use of code reviews - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/airflow")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/airflow")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -137,7 +137,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 		// the transfer from github so this returns a different value than the above GitHub test.
 		It("Should return use of code reviews at commit - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/airflow")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/airflow")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())

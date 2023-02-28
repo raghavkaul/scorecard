@@ -122,35 +122,11 @@ var _ = Describe("E2E TEST:"+checks.CheckCITests, func() {
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 14,
-			}
-			expected2 := scut.TestReturn{
-				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  0,
-				NumberOfDebug: 14,
-			}
-			expected3 := scut.TestReturn{
-				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  0,
-				NumberOfDebug: 14,
-			}
-			expected4 := scut.TestReturn{
-				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  0,
-				NumberOfDebug: 14,
+				NumberOfDebug: 12,
 			}
 			result := checks.CITests(&req)
 			res1 := scut.ValidateTestReturn(nil, "CI tests run", &expected, &result, &dl)
-			res2 := scut.ValidateTestReturn(nil, "CI tests run", &expected2, &result, &dl)
-			res3 := scut.ValidateTestReturn(nil, "CI tests run", &expected3, &result, &dl)
-			res4 := scut.ValidateTestReturn(nil, "CI tests run", &expected4, &result, &dl)
-			Expect(res1 || res2 || res3 || res4).Should(BeTrue())
+			Expect(res1).Should(BeTrue())
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return use of CI tests at commit - GitLab", func() {
@@ -173,35 +149,38 @@ var _ = Describe("E2E TEST:"+checks.CheckCITests, func() {
 				Score:         0,
 				NumberOfWarn:  0,
 				NumberOfInfo:  0,
-				NumberOfDebug: 14,
-			}
-			expected2 := scut.TestReturn{
-				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  0,
-				NumberOfDebug: 14,
-			}
-			expected3 := scut.TestReturn{
-				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  0,
-				NumberOfDebug: 14,
-			}
-			expected4 := scut.TestReturn{
-				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  0,
-				NumberOfDebug: 14,
+				NumberOfDebug: 12,
 			}
 			result := checks.CITests(&req)
 			res1 := scut.ValidateTestReturn(nil, "CI tests run", &expected, &result, &dl)
-			res2 := scut.ValidateTestReturn(nil, "CI tests run", &expected2, &result, &dl)
-			res3 := scut.ValidateTestReturn(nil, "CI tests run", &expected3, &result, &dl)
-			res4 := scut.ValidateTestReturn(nil, "CI tests run", &expected4, &result, &dl)
-			Expect(res1 || res2 || res3 || res4).Should(BeTrue())
+			Expect(res1).Should(BeTrue())
+			Expect(repoClient.Close()).Should(BeNil())
+		})
+		It("Should return use of CI tests at commit - GitLab", func() {
+			dl := scut.TestDetailLogger{}
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/fdroid/fdroidclient")
+			Expect(err).Should(BeNil())
+			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
+			Expect(err).Should(BeNil())
+			// url to commit is https://gitlab.com/fdroid/fdroidclient/-/commit/a1d33881902cee33586a4fd4ee1538042a7bdedf
+			err = repoClient.InitRepo(repo, "a1d33881902cee33586a4fd4ee1538042a7bdedf", 0)
+			Expect(err).Should(BeNil())
+			req := checker.CheckRequest{
+				Ctx:        context.Background(),
+				RepoClient: repoClient,
+				Repo:       repo,
+				Dlogger:    &dl,
+			}
+			expected := scut.TestReturn{
+				Error:         nil,
+				Score:         10,
+				NumberOfWarn:  0,
+				NumberOfInfo:  0,
+				NumberOfDebug: 1,
+			}
+			result := checks.CITests(&req)
+			res1 := scut.ValidateTestReturn(nil, "CI tests run", &expected, &result, &dl)
+			Expect(res1).Should(BeTrue())
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 	})

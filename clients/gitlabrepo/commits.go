@@ -53,7 +53,6 @@ func (handler *commitsHandler) setup() error {
 			// here is the earliest one.
 			mergeRequests, _, err := handler.glClient.Commits.ListMergeRequestsByCommit(handler.repourl.project, commit.ID)
 			if err != nil {
-				fmt.Println("reached: commit: "+commit.ID+" err: %w\n", err)
 				handler.errSetup = fmt.Errorf("unable to find merge requests associated with commit: %w", err)
 				return
 			}
@@ -79,13 +78,39 @@ func (handler *commitsHandler) setup() error {
 				continue
 			}
 
-			// Casting the Reviewers into clients.Review.
-			var reviews []clients.Review
+			// Two GitLab APIs for reviews (reviews vs. approvals)
+			// Use a map to consolidate results from both APIs by the user ID who performed the
+			reviews := make(map[int]clients.Review)
 			for _, reviewer := range mergeRequest.Reviewers {
-				reviews = append(reviews, clients.Review{
-					Author: &clients.User{ID: int64(reviewer.ID)},
-					State:  "",
-				})
+				if reviewer.State == "unreviewed" {
+					continue
+				}
+				reviews[reviewer.ID] = clients.Review{
+					Author: &clients.User{Login: reviewer.Username, ID: int64(reviewer.ID)},
+					State:  "COMMENTED",
+				}
+			}
+
+			approvals, _, err := handler.glClient.MergeRequests.GetMergeRequestApprovals(
+				handler.repourl.project, mergeRequest.IID,
+			)
+			if err != nil {
+				handler.errSetup = fmt.Errorf("unable to find approvers for commit: %w", err)
+				return
+			}
+
+			if approvals != nil {
+				for _, approver := range approvals.ApprovedBy {
+					reviews[approver.User.ID] = clients.Review{
+						Author: &clients.User{Login: approver.User.Username, ID: int64(approver.User.ID)},
+						State:  "APPROVED",
+					}
+				}
+			}
+
+			vals := make([]clients.Review, 0, len(reviews))
+			for _, v := range reviews {
+				vals = append(vals, v)
 			}
 
 			// Casting the Labels into []clients.Label.
@@ -106,10 +131,10 @@ func (handler *commitsHandler) setup() error {
 						Number:   mergeRequest.ID,
 						MergedAt: *mergeRequest.MergedAt,
 						HeadSHA:  mergeRequest.SHA,
-						Author:   clients.User{ID: int64(mergeRequest.Author.ID)},
+						Author:   clients.User{Login: mergeRequest.Author.Username, ID: int64(mergeRequest.Author.ID)},
 						Labels:   labels,
-						Reviews:  reviews,
-						MergedBy: clients.User{ID: int64(mergeRequest.MergedBy.ID)},
+						Reviews:  vals,
+						MergedBy: clients.User{Login: mergeRequest.MergedBy.Username, ID: int64(mergeRequest.MergedBy.ID)},
 					},
 				})
 		}

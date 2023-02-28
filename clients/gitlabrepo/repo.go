@@ -77,11 +77,6 @@ func (r *repoURL) parse(input string) error {
 		return sce.WithMessage(sce.ErrorInvalidURL, fmt.Sprintf("%v. Expected full repository url", input))
 	}
 
-	fmt.Printf("u: %v\n", u)
-	fmt.Printf("u.Scheme: %v\n", u.Scheme)
-	fmt.Printf("u.Host: %v\n", u.Host)
-	fmt.Printf("split: %v\n", split)
-
 	r.scheme, r.host, r.owner, r.project = u.Scheme, u.Host, split[0], split[1]
 	return nil
 }

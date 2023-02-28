@@ -77,8 +77,8 @@ var _ = Describe("E2E TEST:"+checks.CheckContributors, func() {
 			expected := scut.TestReturn{
 				Error:         nil,
 				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  1,
+				NumberOfWarn:  1,
+				NumberOfInfo:  0,
 				NumberOfDebug: 0,
 			}
 			result := checks.Contributors(&req)

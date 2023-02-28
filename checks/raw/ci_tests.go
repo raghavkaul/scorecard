@@ -42,21 +42,24 @@ func CITests(c clients.RepoClient) (checker.CITestData, error) {
 			continue
 		}
 
+		if _, ok := prNos[pr.HeadSHA]; ok {
+			continue
+		}
+
 		prNos[pr.HeadSHA] = pr.Number
 
 		// HeadSHA is the last commit before the merge. if squashing enabled,
 		// multiple commit SHAs will map to a single HeadSHA
-		if len(runs[pr.HeadSHA]) == 0 {
-			crs, err := c.ListCheckRunsForRef(pr.HeadSHA)
-			if err != nil {
-				return checker.CITestData{}, sce.WithMessage(
-					sce.ErrScorecardInternal,
-					fmt.Sprintf("Client.Repositories.ListCheckRunsForRef: %v", err),
-				)
-			}
-
-			runs[pr.HeadSHA] = crs
+		crs, err := c.ListCheckRunsForRef(pr.HeadSHA)
+		if err != nil {
+			return checker.CITestData{}, sce.WithMessage(
+				sce.ErrScorecardInternal,
+				fmt.Sprintf("Client.Repositories.ListCheckRunsForRef: %v", err),
+			)
 		}
+		fmt.Printf("crs: %v\n", crs)
+
+		runs[pr.HeadSHA] = append(runs[pr.HeadSHA], crs...)
 
 		statuses, err := c.ListStatuses(pr.HeadSHA)
 		if err != nil {
@@ -71,7 +74,7 @@ func CITests(c clients.RepoClient) (checker.CITestData, error) {
 
 	// Collate
 	infos := []checker.RevisionCIInfo{}
-	for headsha := range runs {
+	for headsha := range prNos {
 		crs := runs[headsha]
 		statuses := commitStatuses[headsha]
 		infos = append(infos, checker.RevisionCIInfo{

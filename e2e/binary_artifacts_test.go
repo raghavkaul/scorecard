@@ -213,7 +213,7 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 		})
 		It("Should return binary artifacts present in source code - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-binary-artifacts-e2e")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -241,7 +241,7 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 		})
 		It("Should return binary artifacts present at commit in source code - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-binary-artifacts-e2e")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e")
 			Expect(err).Should(BeNil())
 			fmt.Printf("repo: %v\n", repo)
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
@@ -270,7 +270,7 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 		})
 		It("Should return no binary artifacts present in source code - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-binary-artifacts-e2e-4-binaries")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e-4-binaries")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
@@ -299,7 +299,7 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 		})
 		It("Should return binary artifacts present at commit in source code - GitLab", func() {
 			dl := scut.TestDetailLogger{}
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-binary-artifacts-e2e-4-binaries")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e-4-binaries")
 			Expect(err).Should(BeNil())
 			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 			Expect(err).Should(BeNil())
