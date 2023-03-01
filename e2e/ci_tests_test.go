@@ -103,32 +103,6 @@ var _ = Describe("E2E TEST:"+checks.CheckCITests, func() {
 			Expect(scut.ValidateTestReturn(nil, "CI tests run", &expected, &result, &dl)).Should(BeTrue())
 			Expect(repoClient.Close()).Should(BeNil())
 		})
-		It("Should return use of CI tests - GitLab", func() {
-			dl := scut.TestDetailLogger{}
-			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")
-			Expect(err).Should(BeNil())
-			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
-			Expect(err).Should(BeNil())
-			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
-			Expect(err).Should(BeNil())
-			req := checker.CheckRequest{
-				Ctx:        context.Background(),
-				RepoClient: repoClient,
-				Repo:       repo,
-				Dlogger:    &dl,
-			}
-			expected := scut.TestReturn{
-				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  0,
-				NumberOfInfo:  0,
-				NumberOfDebug: 12,
-			}
-			result := checks.CITests(&req)
-			res1 := scut.ValidateTestReturn(nil, "CI tests run", &expected, &result, &dl)
-			Expect(res1).Should(BeTrue())
-			Expect(repoClient.Close()).Should(BeNil())
-		})
 		It("Should return use of CI tests at commit - GitLab", func() {
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")

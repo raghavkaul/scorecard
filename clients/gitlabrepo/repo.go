@@ -116,6 +116,7 @@ func (r *repoURL) IsValid() error {
 			fmt.Sprintf("couldn't create gitlab client for %s", r.host),
 		)
 	}
+
 	_, resp, err := client.Projects.ListProjects(&gitlab.ListProjectsOptions{})
 	if resp == nil || resp.StatusCode != 200 {
 		return sce.WithMessage(sce.ErrRepoUnreachable,
