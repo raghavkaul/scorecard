@@ -19,8 +19,9 @@ package gitlabrepo
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
+
+	"github.com/xanzy/go-gitlab"
 
 	"github.com/ossf/scorecard/v4/clients"
 	sce "github.com/ossf/scorecard/v4/errors"
@@ -105,12 +106,26 @@ func (r *repoURL) Org() clients.Repo {
 
 // IsValid implements Repo.IsValid.
 func (r *repoURL) IsValid() error {
-	hostMatched, err := regexp.MatchString("gitlab.*com", r.host)
-	if err != nil {
-		return fmt.Errorf("error processing regex: %w", err)
+	if strings.Contains(r.host, "gitlab.") {
+		return nil
 	}
-	if !hostMatched {
-		return sce.WithMessage(sce.ErrorInvalidURL, "non gitlab repository found")
+
+	client, err := gitlab.NewClient("", gitlab.WithBaseURL(fmt.Sprintf("%s://%s", r.scheme, r.host)))
+	if err != nil {
+		return sce.WithMessage(err,
+			fmt.Sprintf("couldn't create gitlab client for %s", r.host),
+		)
+	}
+	_, resp, err := client.Projects.ListProjects(&gitlab.ListProjectsOptions{})
+	if resp == nil || resp.StatusCode != 200 {
+		return sce.WithMessage(sce.ErrRepoUnreachable,
+			fmt.Sprintf("couldn't reach gitlab instance at %s", r.host),
+		)
+	}
+	if err != nil {
+		return sce.WithMessage(err,
+			fmt.Sprintf("error when connecting to gitlab instance at %s", r.host),
+		)
 	}
 
 	if strings.TrimSpace(r.owner) == "" || strings.TrimSpace(r.project) == "" {

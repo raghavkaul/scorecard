@@ -280,3 +280,14 @@ func CreateGitlabClientWithToken(ctx context.Context, token string, repo clients
 func CreateOssFuzzRepoClient(ctx context.Context, logger *log.Logger) (clients.RepoClient, error) {
 	return nil, fmt.Errorf("%w, oss fuzz currently only supported for github repos", clients.ErrUnsupportedFeature)
 }
+
+// DetectGitLab: check whether the repoURI is a GitLab URI
+// Makes HTTP request to GitLab API.
+func DetectGitLab(repoURI string) bool {
+	var repo repoURL
+	if err := repo.parse(repoURI); err != nil {
+		return false
+	}
+
+	return repo.IsValid() == nil
+}

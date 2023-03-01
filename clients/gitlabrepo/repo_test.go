@@ -31,70 +31,15 @@ func TestRepoURL_IsValid(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name: "valid http address",
-			expected: repoURL{
-				scheme:  "http",
-				host:    "gitlab.example.com",
-				owner:   "foo",
-				project: "1234",
-			},
-			inputURL: "http://gitlab.example.com/foo/1234",
-			wantErr:  false,
-		},
-		{
-			name: "valid https address",
-			expected: repoURL{
-				scheme:  "https",
-				host:    "gitlab.example.com",
-				owner:   "foo",
-				project: "1234",
-			},
-			inputURL: "https://gitlab.example.com/foo/1234",
-			wantErr:  false,
-		},
-		{
-			name: "valid http address with trailing slash",
-			expected: repoURL{
-				scheme:  "http",
-				host:    "gitlab.example.com",
-				owner:   "foo",
-				project: "1234",
-			},
-			inputURL: "http://gitlab.example.com/foo/1234/",
-			wantErr:  false,
-		},
-		{
-			name: "valid https address with trailing slash",
-			expected: repoURL{
-				scheme:  "https",
-				host:    "gitlab.example.com",
-				owner:   "foo",
-				project: "1234",
-			},
-			inputURL: "https://gitlab.example.com/foo/1234/",
-			wantErr:  false,
-		},
-		{
-			name: "non gitlab repository",
+			name: "github repository",
 			expected: repoURL{
 				scheme:  "https",
 				host:    "github.com",
-				owner:   "foo",
-				project: "1234",
+				owner:   "ossf",
+				project: "scorecard",
 			},
-			inputURL: "https://github.com/foo/1234",
+			inputURL: "https://github.com/ossf/scorecard",
 			wantErr:  true,
-		},
-		{
-			name: "GitLab project with wrong projectID",
-			expected: repoURL{
-				scheme:  "https",
-				host:    "gitlab.example.com",
-				owner:   "foo",
-				project: "bar",
-			},
-			inputURL: "https://gitlab.example.com/foo/bar",
-			wantErr:  false,
 		},
 		{
 			name: "GitHub project with 'gitlab.' in the title",
@@ -108,13 +53,36 @@ func TestRepoURL_IsValid(t *testing.T) {
 			wantErr:  true,
 		},
 		{
-			name: "valid gitlab project without http or https",
+			name: "valid gitlab project",
 			expected: repoURL{
-				host:    "gitlab.example.com",
-				owner:   "foo",
-				project: "1234",
+				host:    "gitlab.com",
+				owner:   "ossf-test",
+				project: "scorecard-check-binary-artifacts-e2e",
 			},
-			inputURL: "gitlab.example.com/foo/1234",
+			inputURL: "gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e",
+			wantErr:  false,
+		},
+		{
+			name: "valid https address with trailing slash",
+			expected: repoURL{
+				scheme:  "https",
+				host:    "gitlab.com",
+				owner:   "ossf-test",
+				project: "scorecard-check-binary-artifacts-e2e",
+			},
+			inputURL: "https://gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e/",
+			wantErr:  false,
+		},
+
+		{
+			name: "valid hosted gitlab project",
+			expected: repoURL{
+				scheme:  "https",
+				host:    "salsa.debian.org",
+				owner:   "webmaster-team",
+				project: "webml",
+			},
+			inputURL: "https://salsa.debian.org/webmaster-team/webwml",
 			wantErr:  false,
 		},
 	}

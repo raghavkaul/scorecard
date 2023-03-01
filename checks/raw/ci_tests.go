@@ -57,7 +57,6 @@ func CITests(c clients.RepoClient) (checker.CITestData, error) {
 				fmt.Sprintf("Client.Repositories.ListCheckRunsForRef: %v", err),
 			)
 		}
-		fmt.Printf("crs: %v\n", crs)
 
 		runs[pr.HeadSHA] = append(runs[pr.HeadSHA], crs...)
 

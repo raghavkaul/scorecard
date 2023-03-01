@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/ossf/scorecard/v4/clients"
 	ghrepo "github.com/ossf/scorecard/v4/clients/githubrepo"
@@ -56,15 +55,18 @@ func GetClients(ctx context.Context, repoURI, localURI string, logger *log.Logge
 
 	_, experimental := os.LookupEnv("SCORECARD_EXPERIMENTAL")
 
-	if strings.Contains(repoURI, "gitlab.") && experimental {
-		repo, makeRepoError = glrepo.MakeGitlabRepo(repoURI)
-		if makeRepoError != nil {
-			return repo,
-				nil,
-				nil,
-				nil,
-				nil,
-				fmt.Errorf("getting local directory client: %w", makeRepoError)
+	//nolint:nestif
+	if experimental {
+		if isGl := glrepo.DetectGitLab(repoURI); isGl {
+			repo, makeRepoError = glrepo.MakeGitlabRepo(repoURI)
+			if makeRepoError != nil {
+				return repo,
+					nil,
+					nil,
+					nil,
+					nil,
+					fmt.Errorf("getting local directory client: %w", makeRepoError)
+			}
 		}
 	} else {
 		repo, makeRepoError = ghrepo.MakeGithubRepo(repoURI)
@@ -84,7 +86,7 @@ func GetClients(ctx context.Context, repoURI, localURI string, logger *log.Logge
 		retErr = fmt.Errorf("getting OSS-Fuzz repo client: %w", errOssFuzz)
 	}
 	// TODO(repo): Should we be handling the OSS-Fuzz client error like this?
-	if strings.Contains(repoURI, "gitlab.") && experimental {
+	if glrepo.DetectGitLab(repoURI) && experimental {
 		glClient, err := glrepo.CreateGitlabClientWithToken(ctx, os.Getenv("GITLAB_AUTH_TOKEN"), repo)
 		if err != nil {
 			return repo,
