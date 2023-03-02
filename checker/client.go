@@ -54,19 +54,29 @@ func GetClients(ctx context.Context, repoURI, localURI string, logger *log.Logge
 	}
 
 	_, experimental := os.LookupEnv("SCORECARD_EXPERIMENTAL")
+	var repoClient clients.RepoClient
 
 	//nolint:nestif
-	if experimental {
-		if isGl := glrepo.DetectGitLab(repoURI); isGl {
-			repo, makeRepoError = glrepo.MakeGitlabRepo(repoURI)
-			if makeRepoError != nil {
-				return repo,
-					nil,
-					nil,
-					nil,
-					nil,
-					fmt.Errorf("getting local directory client: %w", makeRepoError)
-			}
+	if experimental && glrepo.DetectGitLab(repoURI) {
+		repo, makeRepoError = glrepo.MakeGitlabRepo(repoURI)
+		if makeRepoError != nil {
+			return repo,
+				nil,
+				nil,
+				nil,
+				nil,
+				fmt.Errorf("getting local directory client: %w", makeRepoError)
+		}
+
+		var err error
+		repoClient, err = glrepo.CreateGitlabClientWithToken(ctx, os.Getenv("GITLAB_AUTH_TOKEN"), repo)
+		if err != nil {
+			return repo,
+				nil,
+				nil,
+				nil,
+				nil,
+				fmt.Errorf("error creating gitlab client: %w", err)
 		}
 	} else {
 		repo, makeRepoError = ghrepo.MakeGithubRepo(repoURI)
@@ -78,6 +88,7 @@ func GetClients(ctx context.Context, repoURI, localURI string, logger *log.Logge
 				nil,
 				fmt.Errorf("getting local directory client: %w", makeRepoError)
 		}
+		repoClient = ghrepo.CreateGithubRepoClient(ctx, logger)
 	}
 
 	ossFuzzRepoClient, errOssFuzz := ghrepo.CreateOssFuzzRepoClient(ctx, logger)
@@ -85,29 +96,11 @@ func GetClients(ctx context.Context, repoURI, localURI string, logger *log.Logge
 	if errOssFuzz != nil {
 		retErr = fmt.Errorf("getting OSS-Fuzz repo client: %w", errOssFuzz)
 	}
-	// TODO(repo): Should we be handling the OSS-Fuzz client error like this?
-	if glrepo.DetectGitLab(repoURI) && experimental {
-		glClient, err := glrepo.CreateGitlabClientWithToken(ctx, os.Getenv("GITLAB_AUTH_TOKEN"), repo)
-		if err != nil {
-			return repo,
-				nil,
-				nil,
-				nil,
-				nil,
-				fmt.Errorf("error creating gitlab client: %w", err)
-		}
-		return repo, /*repo*/
-			glClient, /*repoClient*/
-			ossFuzzRepoClient, /*ossFuzzClient*/
-			clients.DefaultCIIBestPracticesClient(), /*ciiClient*/
-			clients.DefaultVulnerabilitiesClient(), /*vulnClient*/
-			retErr
-	} else {
-		return repo, /*repo*/
-			ghrepo.CreateGithubRepoClient(ctx, logger), /*repoClient*/
-			ossFuzzRepoClient, /*ossFuzzClient*/
-			clients.DefaultCIIBestPracticesClient(), /*ciiClient*/
-			clients.DefaultVulnerabilitiesClient(), /*vulnClient*/
-			retErr
-	}
+
+	return repo, /*repo*/
+		repoClient, /*repoClient*/
+		ossFuzzRepoClient, /*ossFuzzClient*/
+		clients.DefaultCIIBestPracticesClient(), /*ciiClient*/
+		clients.DefaultVulnerabilitiesClient(), /*vulnClient*/
+		retErr
 }
