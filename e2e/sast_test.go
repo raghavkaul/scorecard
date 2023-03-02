@@ -57,6 +57,8 @@ var _ = Describe("E2E TEST:"+checks.CheckSAST, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return use of SAST tools - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			// project url is gitlab.com/N8BWert/airflow
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/airflow")

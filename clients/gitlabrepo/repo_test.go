@@ -34,7 +34,7 @@ func TestRepoURL_IsValid(t *testing.T) {
 			name: "github repository",
 			expected: repoURL{
 				scheme:  "https",
-				host:    "github.com",
+				host:    "https://github.com",
 				owner:   "ossf",
 				project: "scorecard",
 			},
@@ -45,7 +45,7 @@ func TestRepoURL_IsValid(t *testing.T) {
 			name: "GitHub project with 'gitlab.' in the title",
 			expected: repoURL{
 				scheme:  "http",
-				host:    "github.com",
+				host:    "http://github.com",
 				owner:   "foo",
 				project: "gitlab.test",
 			},
@@ -55,18 +55,18 @@ func TestRepoURL_IsValid(t *testing.T) {
 		{
 			name: "valid gitlab project",
 			expected: repoURL{
-				host:    "gitlab.com",
+				host:    "https://gitlab.com",
 				owner:   "ossf-test",
 				project: "scorecard-check-binary-artifacts-e2e",
 			},
-			inputURL: "gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e",
+			inputURL: "https://gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e",
 			wantErr:  false,
 		},
 		{
 			name: "valid https address with trailing slash",
 			expected: repoURL{
 				scheme:  "https",
-				host:    "gitlab.com",
+				host:    "https://gitlab.com",
 				owner:   "ossf-test",
 				project: "scorecard-check-binary-artifacts-e2e",
 			},
@@ -78,7 +78,7 @@ func TestRepoURL_IsValid(t *testing.T) {
 			name: "valid hosted gitlab project",
 			expected: repoURL{
 				scheme:  "https",
-				host:    "salsa.debian.org",
+				host:    "https://salsa.debian.org",
 				owner:   "webmaster-team",
 				project: "webml",
 			},
@@ -106,6 +106,9 @@ func TestRepoURL_IsValid(t *testing.T) {
 				fmt.Println("expected: " + tt.expected.owner + " GOT: " + r.owner)
 				fmt.Println("expected: " + tt.expected.project + " GOT: " + r.project)
 				t.Errorf("Got diff: %s", cmp.Diff(tt.expected, r))
+			}
+			if !cmp.Equal(r.Host(), tt.expected.host) {
+				t.Errorf("%s expected host: %s got host %s", tt.inputURL, tt.expected.host, r.Host())
 			}
 		})
 	}

@@ -58,6 +58,8 @@ var _ = Describe("E2E TEST:"+checks.CheckSignedReleases, func() {
 		})
 		// TODO: Make this test test a ossf repository I currently have it just testing against the gitlab project.
 		It("Should return valid signed releases - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			// project url is gitlab.com/gitlab-org/gitlab
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")

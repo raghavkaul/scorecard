@@ -121,6 +121,8 @@ var _ = Describe("E2E TEST:"+checks.CheckPinnedDependencies, func() {
 			Expect(x.Close()).Should(BeNil())
 		})
 		It("Should return dependencies check is working - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-pinned-dependencies-e2e")
 			Expect(err).Should(BeNil())
@@ -147,6 +149,8 @@ var _ = Describe("E2E TEST:"+checks.CheckPinnedDependencies, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return dependencies check at commit - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			// project url is gitlab.com/N8BWert/scorecard-check-pinned-dependencies-e2e.
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-pinned-dependencies-e2e")

@@ -118,7 +118,7 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should get non-admin branch protection on other repositories - GitLab", func() {
-			skipIfTokenIsNot(patTokenType, "GitLab pac only")
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab PAT only")
 
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-branch-protection-e2e")
@@ -138,7 +138,7 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 				Score:         4,
 				NumberOfWarn:  3,
 				NumberOfInfo:  5,
-				NumberOfDebug: 0,
+				NumberOfDebug: 1,
 			}
 			result := checks.BranchProtection(&req)
 			// UPGRADEv2: to remove.
@@ -149,7 +149,7 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should fail to return branch protection on other repositories - GitLab", func() {
-			skipIfTokenIsNot(patTokenType, "GitLab pac only")
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab PAT only")
 
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-branch-protection-e2e-none")
@@ -166,10 +166,10 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			}
 			expected := scut.TestReturn{
 				Error:         nil,
-				Score:         0,
-				NumberOfWarn:  2,
-				NumberOfInfo:  0,
-				NumberOfDebug: 0,
+				Score:         4,
+				NumberOfWarn:  3,
+				NumberOfInfo:  5,
+				NumberOfDebug: 1,
 			}
 			result := checks.BranchProtection(&req)
 
@@ -178,7 +178,7 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should fail to return branch protection on other repositories - GitLab", func() {
-			skipIfTokenIsNot(patTokenType, "GitLab pac only")
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab PAT only")
 
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-branch-protection-e2e-patch-1")
@@ -195,10 +195,10 @@ var _ = Describe("E2E TEST PAT:"+checks.CheckBranchProtection, func() {
 			}
 			expected := scut.TestReturn{
 				Error:         nil,
-				Score:         2,
-				NumberOfWarn:  4,
+				Score:         4,
+				NumberOfWarn:  3,
 				NumberOfInfo:  5,
-				NumberOfDebug: 0,
+				NumberOfDebug: 1,
 			}
 			result := checks.BranchProtection(&req)
 

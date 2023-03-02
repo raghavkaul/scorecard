@@ -212,6 +212,8 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 			Expect(x.Close()).Should(BeNil())
 		})
 		It("Should return binary artifacts present in source code - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e")
 			Expect(err).Should(BeNil())
@@ -240,6 +242,8 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return binary artifacts present at commit in source code - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e")
 			Expect(err).Should(BeNil())
@@ -269,6 +273,8 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return no binary artifacts present in source code - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e-4-binaries")
 			Expect(err).Should(BeNil())
@@ -298,6 +304,8 @@ var _ = Describe("E2E TEST:"+checks.CheckBinaryArtifacts, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return binary artifacts present at commit in source code - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/scorecard-check-binary-artifacts-e2e-4-binaries")
 			Expect(err).Should(BeNil())

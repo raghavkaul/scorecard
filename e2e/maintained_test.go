@@ -57,6 +57,8 @@ var _ = Describe("E2E TEST:"+checks.CheckMaintained, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return valid maintained status - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")
 			Expect(err).Should(BeNil())

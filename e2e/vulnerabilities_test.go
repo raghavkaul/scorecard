@@ -115,6 +115,8 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return that there are vulnerabilities - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			// project url is gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541.
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541")
 			Expect(err).Should(BeNil())
@@ -144,6 +146,8 @@ var _ = Describe("E2E TEST:"+checks.CheckVulnerabilities, func() {
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 		It("Should return that there are vulnerabilities at commit - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			// project url is gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541.
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-vulnerabilities-open62541")
 			Expect(err).Should(BeNil())

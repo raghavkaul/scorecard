@@ -120,6 +120,8 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 				&dl)).Should(BeTrue())
 		})
 		It("Should return license check works - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-license-e2e")
 			Expect(err).Should(BeNil())
@@ -146,6 +148,8 @@ var _ = Describe("E2E TEST:"+checks.CheckLicense, func() {
 				&dl)).Should(BeTrue())
 		})
 		It("Should return license check works at commitSHA - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/N8BWert/scorecard-check-license-e2e")
 			Expect(err).Should(BeNil())
