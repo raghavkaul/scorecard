@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,6 +26,7 @@ import (
 	"github.com/ossf/scorecard/v4/checks/raw"
 	"github.com/ossf/scorecard/v4/clients"
 	"github.com/ossf/scorecard/v4/clients/githubrepo"
+	"github.com/ossf/scorecard/v4/clients/gitlabrepo"
 	scut "github.com/ossf/scorecard/v4/utests"
 )
 
@@ -99,10 +101,27 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 				}
 			}
 			Expect(gh).Should(BeNumerically("==", 2))
+			Expect(repoClient.Close()).Should(BeNil())
+		})
+		// GitLab doesn't seem to preserve merge requests (pull requests in github) and some users had data lost in
+		// the transfer from github so this returns a different value than the above GitHub test.
+		It("Should return use of code reviews - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/airflow")
+			Expect(err).Should(BeNil())
+			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
+			Expect(err).Should(BeNil())
+			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
+			Expect(err).Should(BeNil())
 
 			Expect(repoClient.Close()).Should(BeNil())
 		})
-		It("Should return inconclusive results for a single-maintainer project with only self- or bot changesets", func() {
+		// GitLab doesn't seem to preserve merge requests (pull requests in github) and some users had data lost in
+		// the transfer from github so this returns a different value than the above GitHub test.
+		It("Should return use of code reviews at commit - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
 			repo, err := githubrepo.MakeGithubRepo("Kromey/fast_poisson")
 			Expect(err).Should(BeNil())

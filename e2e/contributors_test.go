@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -24,6 +25,7 @@ import (
 	"github.com/ossf/scorecard/v4/checks"
 	"github.com/ossf/scorecard/v4/clients"
 	"github.com/ossf/scorecard/v4/clients/githubrepo"
+	"github.com/ossf/scorecard/v4/clients/gitlabrepo"
 	scut "github.com/ossf/scorecard/v4/utests"
 )
 
@@ -47,6 +49,38 @@ var _ = Describe("E2E TEST:"+checks.CheckContributors, func() {
 				Score:         checker.MaxResultScore,
 				NumberOfWarn:  0,
 				NumberOfInfo:  1,
+				NumberOfDebug: 0,
+			}
+			result := checks.Contributors(&req)
+			// New version.
+			Expect(scut.ValidateTestReturn(nil, "several contributors", &expected, &result, &dl)).Should(BeTrue())
+			Expect(repoClient.Close()).Should(BeNil())
+		})
+		It("Should return valid project contributors - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
+			dl := scut.TestDetailLogger{}
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")
+			Expect(err).Should(BeNil())
+			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
+			Expect(err).Should(BeNil())
+			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
+			Expect(err).Should(BeNil())
+			req := checker.CheckRequest{
+				Ctx:        context.Background(),
+				RepoClient: repoClient,
+				Repo:       repo,
+				Dlogger:    &dl,
+			}
+			// TODO: change the expected return to be whatever is actually expected
+			// This should also probably be changed to a repository where people make more than one contribution.
+			// This repository seems like every user contributes pretty much one time.
+			// Perhaps there should be a mirror of the scorecard GitHub on GitLab for this to look at.
+			expected := scut.TestReturn{
+				Error:         nil,
+				Score:         0,
+				NumberOfWarn:  1,
+				NumberOfInfo:  0,
 				NumberOfDebug: 0,
 			}
 			result := checks.Contributors(&req)

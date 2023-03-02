@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -24,6 +25,7 @@ import (
 	"github.com/ossf/scorecard/v4/checks"
 	"github.com/ossf/scorecard/v4/clients"
 	"github.com/ossf/scorecard/v4/clients/githubrepo"
+	"github.com/ossf/scorecard/v4/clients/gitlabrepo"
 	scut "github.com/ossf/scorecard/v4/utests"
 )
 
@@ -47,6 +49,37 @@ var _ = Describe("E2E TEST:"+checks.CheckSignedReleases, func() {
 				Score:         8,
 				NumberOfWarn:  5,
 				NumberOfInfo:  5,
+				NumberOfDebug: 5,
+			}
+			result := checks.SignedReleases(&req)
+			// New version.
+			Expect(scut.ValidateTestReturn(nil, "verified release", &expected, &result, &dl)).Should(BeTrue())
+			Expect(repoClient.Close()).Should(BeNil())
+		})
+		// TODO: Make this test test a ossf repository I currently have it just testing against the gitlab project.
+		It("Should return valid signed releases - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
+			dl := scut.TestDetailLogger{}
+			// project url is gitlab.com/gitlab-org/gitlab
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/gitlab-org/gitlab")
+			Expect(err).Should(BeNil())
+			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
+			Expect(err).Should(BeNil())
+			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
+			Expect(err).Should(BeNil())
+			req := checker.CheckRequest{
+				Ctx:        context.Background(),
+				RepoClient: repoClient,
+				Repo:       repo,
+				Dlogger:    &dl,
+			}
+			// TODO: update the expected values to be the result of the actual test
+			expected := scut.TestReturn{
+				Error:         nil,
+				Score:         0,
+				NumberOfWarn:  10,
+				NumberOfInfo:  0,
 				NumberOfDebug: 5,
 			}
 			result := checks.SignedReleases(&req)
