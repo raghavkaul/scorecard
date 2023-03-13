@@ -74,6 +74,7 @@ func TestReleaseAndDevBranchProtected(t *testing.T) {
 		releases      []string
 		nonadmin      bool
 		repoFiles     []string
+		repourl       string
 	}{
 		{
 			name: "Nil release and main branch names",
@@ -420,6 +421,7 @@ func TestReleaseAndDevBranchProtected(t *testing.T) {
 					return getBranch(tt.branches, b, tt.nonadmin), nil
 				}).AnyTimes()
 			mockRepoClient.EXPECT().ListFiles(gomock.Any()).AnyTimes().Return(tt.repoFiles, nil)
+			mockRepoClient.EXPECT().URI().AnyTimes().Return(tt.repourl)
 			dl := scut.TestDetailLogger{}
 			req := checker.CheckRequest{
 				Dlogger:    &dl,
