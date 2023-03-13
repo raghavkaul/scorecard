@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/ossf/scorecard/v4/checker"
 	"github.com/ossf/scorecard/v4/checks/fileparser"
@@ -74,7 +75,7 @@ func BranchProtection(c clients.RepoClient) (checker.BranchProtectionsData, erro
 		}
 
 		// TODO: if this is a sha, get the associated branch. for now, ignore.
-		if commit.MatchString(release.TargetCommitish) {
+		if commit.MatchString(release.TargetCommitish) && !strings.Contains(c.URI(), "gitlab.") {
 			continue
 		}
 

@@ -76,8 +76,10 @@ func releasesFrom(data []*gitlab.Release) []clients.Release {
 		for _, a := range r.Assets.Sources {
 			release.Assets = append(release.Assets, clients.ReleaseAsset{
 				Name: a.Format,
-				URL:  a.URL,
 			})
+			if len(r.Assets.Links) > 0 {
+				release.URL = r.Assets.Links[0].DirectAssetURL
+			}
 		}
 		releases = append(releases, release)
 	}

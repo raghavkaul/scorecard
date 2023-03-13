@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -97,6 +98,7 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 			gh := 0
 			for _, cs := range reviewData.DefaultBranchChangesets {
 				if cs.ReviewPlatform == checker.ReviewPlatformGitHub {
+					fmt.Printf("found github revision %s in spring-framework", cs.RevisionID)
 					gh += 1
 				}
 			}
@@ -119,14 +121,15 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 		})
 		// GitLab doesn't seem to preserve merge requests (pull requests in github) and some users had data lost in
 		// the transfer from github so this returns a different value than the above GitHub test.
-		It("Should return use of code reviews at commit - GitLab", func() {
+		It("Should return use of code reviews - GitLab", func() {
 			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
 
 			dl := scut.TestDetailLogger{}
-			repo, err := githubrepo.MakeGithubRepo("Kromey/fast_poisson")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/airflow")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
-			err = repoClient.InitRepo(repo, "bb7b9606690c2b386dc9e2cbe0216d389ed1f078", 0)
+			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
+			Expect(err).Should(BeNil())
+			err = repoClient.InitRepo(repo, clients.HeadSHA, 0)
 			Expect(err).Should(BeNil())
 
 			req := checker.CheckRequest{
@@ -136,18 +139,27 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 				Dlogger:    &dl,
 			}
 			expected := scut.TestReturn{
-				Score: checker.InconclusiveResultScore,
+				Error:         nil,
+				Score:         checker.MinResultScore,
+				NumberOfWarn:  0,
+				NumberOfInfo:  0,
+				NumberOfDebug: 0,
 			}
 			result := checks.CodeReview(&req)
 			Expect(scut.ValidateTestReturn(nil, "use code reviews", &expected, &result, &dl)).Should(BeTrue())
 			Expect(repoClient.Close()).Should(BeNil())
 		})
-		It("Should return minimum score for a single-maintainer project with some unreviewed human changesets", func() {
+		// GitLab doesn't seem to preserve merge requests (pull requests in github) and some users had data lost in
+		// the transfer from github so this returns a different value than the above GitHub test.
+		It("Should return use of code reviews at commit - GitLab", func() {
+			skipIfTokenIsNot(gitlabPATTokenType, "GitLab only")
+
 			dl := scut.TestDetailLogger{}
-			repo, err := githubrepo.MakeGithubRepo("Kromey/fast_poisson")
+			repo, err := gitlabrepo.MakeGitlabRepo("gitlab.com/ossf-test/airflow")
 			Expect(err).Should(BeNil())
-			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
-			err = repoClient.InitRepo(repo, "10aefa7c9a6669ef34e209c3c4b6ad48dd9844e3", 0)
+			repoClient, err := gitlabrepo.CreateGitlabClientWithToken(context.Background(), os.Getenv("GITLAB_AUTH_TOKEN"), repo)
+			Expect(err).Should(BeNil())
+			err = repoClient.InitRepo(repo, "0a6850647e531b08f68118ff8ca20577a5b4062c", 0)
 			Expect(err).Should(BeNil())
 
 			req := checker.CheckRequest{
@@ -157,10 +169,35 @@ var _ = Describe("E2E TEST:"+checks.CheckCodeReview, func() {
 				Dlogger:    &dl,
 			}
 			expected := scut.TestReturn{
-				Score: checker.MinResultScore,
+				Error:         nil,
+				Score:         checker.MinResultScore,
+				NumberOfWarn:  0,
+				NumberOfInfo:  0,
+				NumberOfDebug: 0,
 			}
 			result := checks.CodeReview(&req)
 			Expect(scut.ValidateTestReturn(nil, "use code reviews", &expected, &result, &dl)).Should(BeTrue())
+			Expect(repoClient.Close()).Should(BeNil())
+		})
+		It("Should return use of implicit code reviews at commit", func() {
+			repo, err := githubrepo.MakeGithubRepo("spring-projects/spring-framework")
+			Expect(err).Should(BeNil())
+			repoClient := githubrepo.CreateGithubRepoClient(context.Background(), logger)
+			err = repoClient.InitRepo(repo, "ca5e453f87f7e84033bb90a2fb54ee9f7fc94d61", 0)
+			Expect(err).Should(BeNil())
+
+			reviewData, err := raw.CodeReview(repoClient)
+			Expect(err).Should(BeNil())
+			Expect(reviewData.DefaultBranchChangesets).ShouldNot(BeEmpty())
+
+			gh := 0
+			for _, cs := range reviewData.DefaultBranchChangesets {
+				if cs.ReviewPlatform == checker.ReviewPlatformGitHub {
+					fmt.Printf("found github revision %s in spring-framework", cs.RevisionID)
+					gh += 1
+				}
+			}
+			Expect(gh).Should(BeNumerically("==", 2))
 			Expect(repoClient.Close()).Should(BeNil())
 		})
 	})

@@ -24,7 +24,7 @@ func WebHook(c *checker.CheckRequest) (checker.WebhooksData, error) {
 	hooksResp, err := c.RepoClient.ListWebhooks()
 	if err != nil {
 		return checker.WebhooksData{},
-			sce.WithMessage(sce.ErrScorecardInternal, "Client.Repositories.ListWebhooks")
+			sce.WithMessage(sce.ErrScorecardInternal, err.Error())
 	}
 	return checker.WebhooksData{
 		Webhooks: hooksResp,

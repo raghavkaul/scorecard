@@ -72,6 +72,12 @@ func (handler *contributorsHandler) setup() error {
 				}
 			}
 
+			// TODO: Handle many users of same name
+
+			if len(users) == 0 {
+				continue
+			}
+
 			contributor := clients.User{
 				Login:            contrib.Email,
 				Companies:        []string{users[0].Organization},
@@ -90,4 +96,12 @@ func (handler *contributorsHandler) getContributors() ([]clients.User, error) {
 		return nil, fmt.Errorf("error during contributorsHandler.setup: %w", err)
 	}
 	return handler.contributors, nil
+}
+
+// Expected email form: <firstname>.<lastname>@<namespace>.com.
+func parseEmailToName(email string) string {
+	s := strings.Split(email, ".")
+	firstName := s[0]
+	lastName := strings.Split(s[1], "@")[0]
+	return firstName + " " + lastName
 }
