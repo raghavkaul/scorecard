@@ -75,12 +75,12 @@ const (
 
 // Finding represents a finding.
 type Finding struct {
-	Location    *Location         `json:"location,omitempty"`
-	Remediation *Remediation      `json:"remediation,omitempty"`
-	Values      map[string]string `json:"values,omitempty"`
 	Probe       string            `json:"probe"`
-	Message     string            `json:"message"`
 	Outcome     Outcome           `json:"outcome"`
+	Location    *Location         `json:"location,omitempty"`
+	Message     string            `json:"message"`
+	Values      map[string]string `json:"values,omitempty"`
+	Remediation *Remediation      `json:"remediation,omitempty"`
 
 	// Expected bad outcome, used to determine if Remediation should be set
 	badOutcome Outcome
